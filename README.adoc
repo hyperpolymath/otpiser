@@ -1,0 +1,52 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= Otpiser
+Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+:toc: left
+:icons: font
+
+== What Is This?
+
+OTPiser generates **OTP supervision trees, GenServers, and fault-tolerance
+scaffolding** from service descriptions — bringing Erlang/BEAM reliability
+to any service architecture.
+
+The "let it crash" supervision tree model is genuinely superior for
+reliability, but OTP patterns are hard to learn. OTPiser eliminates the cliff.
+
+== How It Works
+
+Describe your services in `otpiser.toml`. OTPiser:
+
+1. Generates Elixir/Erlang supervision trees with correct restart strategies
+2. Creates GenServer modules for each service component
+3. Wires up health checks, circuit breakers, and backpressure
+4. Generates NIFs (via Zig FFI) for performance-critical paths
+
+== Key Value
+
+* **9-nines reliability patterns** without learning OTP
+* **Supervision trees generated from service descriptions**
+* **"Let it crash" philosophy** — services self-heal automatically
+
+== Architecture
+
+Follows the hyperpolymath -iser pattern (same as https://github.com/hyperpolymath/chapeliser[Chapeliser]):
+
+* **Manifest** (`otpiser.toml`) — describe WHAT you want
+* **Idris2 ABI** (`src/abi/`) — formal proofs of interface correctness
+* **Zig FFI** (`ffi/zig/`) — C-ABI bridge to target language runtime
+* **Codegen** (`src/codegen/`) — generates target language wrapper code
+* **Rust CLI** — parses manifest, validates, generates, builds, runs
+
+User writes zero target language code. Otpiser generates everything.
+
+Part of the https://github.com/hyperpolymath/iseriser[-iser family] of acceleration frameworks.
+
+== Status
+
+**Pre-alpha.** Architecture defined, scaffolding in place, codegen pending.
+
+== License
+
+SPDX-License-Identifier: PMPL-1.0-or-later

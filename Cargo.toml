@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+[package]
+name = "otpiser"
+version = "0.1.0"
+edition = "2024"
+authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
+description = "Generate OTP supervision trees, GenServers, and fault-tolerance scaffolding from service descriptions"
+license = "PMPL-1.0-or-later"
+repository = "https://github.com/hyperpolymath/otpiser"
+keywords = ["erlang", "otp", "elixir", "fault-tolerance", "supervision"]
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+anyhow = "1"
+thiserror = "2"
+handlebars = "6"
+walkdir = "2"
+
+[dev-dependencies]
+tempfile = "3"
