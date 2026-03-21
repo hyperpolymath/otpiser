@@ -588,3 +588,1147 @@ restart = "temporary"
         "Temporary child should have explicit restart spec"
     );
 }
+
+// ===========================================================================
+// Point-to-point tests: each supervision strategy generates correct Elixir
+// ===========================================================================
+
+#[test]
+fn test_one_for_one_strategy_generates_correct_elixir() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "p2p_ofo"
+entry = "P2pOfo.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "core"
+strategy = "one_for_one"
+max-restarts = 3
+max-seconds = 5
+
+[[supervisors.children]]
+name = "alpha"
+type = "worker"
+restart = "permanent"
+
+[[supervisors.children]]
+name = "beta"
+type = "worker"
+restart = "transient"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    let sup = std::fs::read_to_string(output_dir.join("lib/p2p_ofo/core_supervisor.ex"))
+        .expect("read supervisor");
+    assert!(sup.contains("strategy: :one_for_one"), "Strategy must be one_for_one");
+    assert!(sup.contains("max_restarts: 3"), "Max restarts must be 3");
+    // one_for_one: each child listed independently.
+    assert!(sup.contains("P2pOfo.Alpha"), "Alpha worker must be in child specs");
+    assert!(sup.contains("P2pOfo.Beta"), "Beta worker must be in child specs");
+}
+
+#[test]
+fn test_one_for_all_strategy_generates_correct_elixir() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "p2p_ofa"
+entry = "P2pOfa.Application"
+strategy = "one_for_all"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "coupled"
+strategy = "one_for_all"
+max-restarts = 10
+max-seconds = 60
+
+[[supervisors.children]]
+name = "db-conn"
+type = "worker"
+restart = "permanent"
+
+[[supervisors.children]]
+name = "cache-layer"
+type = "worker"
+restart = "permanent"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    let sup = std::fs::read_to_string(output_dir.join("lib/p2p_ofa/coupled_supervisor.ex"))
+        .expect("read supervisor");
+    assert!(sup.contains("strategy: :one_for_all"), "Strategy must be one_for_all");
+    assert!(sup.contains("max_restarts: 10"), "Max restarts must be 10");
+    assert!(sup.contains("max_seconds: 60"), "Max seconds must be 60");
+}
+
+#[test]
+fn test_rest_for_one_strategy_generates_correct_elixir() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "p2p_rfo"
+entry = "P2pRfo.Application"
+strategy = "rest_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "pipeline"
+strategy = "rest_for_one"
+max-restarts = 5
+max-seconds = 10
+
+[[supervisors.children]]
+name = "producer"
+type = "worker"
+restart = "permanent"
+
+[[supervisors.children]]
+name = "transformer"
+type = "worker"
+restart = "permanent"
+
+[[supervisors.children]]
+name = "consumer"
+type = "worker"
+restart = "transient"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    let sup = std::fs::read_to_string(output_dir.join("lib/p2p_rfo/pipeline_supervisor.ex"))
+        .expect("read supervisor");
+    assert!(sup.contains("strategy: :rest_for_one"), "Strategy must be rest_for_one");
+    // Children must be in order (rest_for_one is order-dependent).
+    let producer_pos = sup.find("P2pRfo.Producer").expect("Producer in output");
+    let transformer_pos = sup.find("P2pRfo.Transformer").expect("Transformer in output");
+    let consumer_pos = sup.find("P2pRfo.Consumer").expect("Consumer in output");
+    assert!(producer_pos < transformer_pos, "Producer before Transformer");
+    assert!(transformer_pos < consumer_pos, "Transformer before Consumer");
+}
+
+// ===========================================================================
+// End-to-end tests: full pipeline from manifest to all generated files
+// ===========================================================================
+
+#[test]
+fn test_end_to_end_full_pipeline() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "order_service"
+entry = "OrderService.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "OrderRequest"
+output-type = "OrderResult"
+
+[options]
+flags = ["health-checks", "telemetry"]
+generate-tests = true
+generate-docker = false
+
+[[supervisors]]
+name = "processing"
+strategy = "one_for_all"
+max-restarts = 5
+max-seconds = 10
+
+[[supervisors.children]]
+name = "order-validator"
+type = "worker"
+restart = "permanent"
+
+[[supervisors.children]]
+name = "payment-processor"
+type = "worker"
+restart = "permanent"
+
+[[supervisors]]
+name = "monitoring"
+strategy = "one_for_one"
+max-restarts = 10
+max-seconds = 30
+
+[[supervisors.children]]
+name = "health-checker"
+type = "worker"
+restart = "transient"
+
+[[supervisors.children]]
+name = "metrics-collector"
+type = "worker"
+restart = "temporary"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse manifest");
+    manifest::validate(&m).expect("Manifest should be valid");
+
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap())
+        .expect("generate_all should succeed");
+
+    // Verify all expected files exist.
+    let expected_files = vec![
+        "mix.exs",
+        ".formatter.exs",
+        "SUPERVISION_TREE.txt",
+        "lib/order_service/application.ex",
+        "lib/order_service/processing_supervisor.ex",
+        "lib/order_service/monitoring_supervisor.ex",
+        "lib/order_service/order_validator.ex",
+        "lib/order_service/payment_processor.ex",
+        "lib/order_service/health_checker.ex",
+        "lib/order_service/metrics_collector.ex",
+        "test/test_helper.exs",
+        "test/order_service_test.exs",
+    ];
+    for file in &expected_files {
+        assert!(
+            output_dir.join(file).exists(),
+            "Expected file should exist: {}",
+            file
+        );
+    }
+
+    // Verify mix.exs references the correct app and module.
+    let mix = std::fs::read_to_string(output_dir.join("mix.exs")).expect("read mix.exs");
+    assert!(mix.contains("app: :order_service"));
+    assert!(mix.contains("OrderService.Application"));
+    assert!(mix.contains("OrderService.MixProject"));
+
+    // Verify application.ex references both supervisors.
+    let app = std::fs::read_to_string(output_dir.join("lib/order_service/application.ex"))
+        .expect("read application.ex");
+    assert!(app.contains("OrderService.ProcessingSupervisor"));
+    assert!(app.contains("OrderService.MonitoringSupervisor"));
+
+    // Verify test file uses ExUnit.
+    let test = std::fs::read_to_string(output_dir.join("test/order_service_test.exs"))
+        .expect("read test");
+    assert!(test.contains("use ExUnit.Case"));
+    assert!(test.contains("OrderService.Application"));
+}
+
+#[test]
+fn test_end_to_end_minimal_no_supervisors() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "bare_bones"
+entry = "BareBones.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "Msg"
+output-type = "Reply"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    manifest::validate(&m).expect("Should be valid");
+
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    // Must have mix.exs, application.ex, default supervisor, diagram.
+    // Note: without explicit [options] section, generate-tests defaults to false
+    // because the Options struct uses #[derive(Default)] when the whole section is absent.
+    assert!(output_dir.join("mix.exs").exists());
+    assert!(output_dir.join("lib/bare_bones/application.ex").exists());
+    assert!(output_dir.join("lib/bare_bones/supervisor.ex").exists());
+    assert!(output_dir.join("SUPERVISION_TREE.txt").exists());
+    assert!(output_dir.join(".formatter.exs").exists());
+
+    // Default supervisor should reference BareBones.Supervisor module.
+    let sup = std::fs::read_to_string(output_dir.join("lib/bare_bones/supervisor.ex"))
+        .expect("read supervisor.ex");
+    assert!(sup.contains("BareBones.Supervisor"));
+}
+
+// ===========================================================================
+// Edge case tests
+// ===========================================================================
+
+#[test]
+fn test_deeply_nested_supervisors_three_levels() {
+    // Note: otpiser's manifest uses [[supervisors]] as flat top-level defs,
+    // and children of type "supervisor" represent nesting. The codegen produces
+    // a child spec with type: :supervisor. We test that 3+ supervisor children
+    // parse and generate correctly.
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "deep_app"
+entry = "DeepApp.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "level1"
+strategy = "one_for_one"
+max-restarts = 3
+max-seconds = 5
+
+[[supervisors.children]]
+name = "level2-a"
+type = "supervisor"
+strategy = "one_for_all"
+restart = "permanent"
+
+[[supervisors.children]]
+name = "level2-b"
+type = "supervisor"
+strategy = "rest_for_one"
+restart = "permanent"
+
+[[supervisors.children]]
+name = "leaf-worker"
+type = "worker"
+restart = "permanent"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    manifest::validate(&m).expect("Should be valid");
+
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    let sup = std::fs::read_to_string(output_dir.join("lib/deep_app/level1_supervisor.ex"))
+        .expect("read supervisor");
+
+    // Both child supervisors should appear with type: :supervisor.
+    assert!(sup.contains("type: :supervisor"), "Child supervisors should have type: :supervisor");
+    assert!(sup.contains("DeepApp.Level2A"), "Level2A supervisor child in specs");
+    assert!(sup.contains("DeepApp.Level2B"), "Level2B supervisor child in specs");
+    assert!(sup.contains("DeepApp.LeafWorker"), "LeafWorker in specs");
+}
+
+#[test]
+fn test_supervisor_with_no_children() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "empty_sup"
+entry = "EmptySup.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "vacant"
+strategy = "one_for_one"
+max-restarts = 3
+max-seconds = 5
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    manifest::validate(&m).expect("Should be valid");
+
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    let sup = std::fs::read_to_string(output_dir.join("lib/empty_sup/vacant_supervisor.ex"))
+        .expect("read supervisor");
+    assert!(sup.contains("children = []"), "Empty supervisor should have empty children list");
+    assert!(sup.contains("strategy: :one_for_one"), "Strategy should still be set");
+}
+
+#[test]
+fn test_all_restart_types_permanent() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "restart_perm"
+entry = "RestartPerm.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "main"
+strategy = "one_for_one"
+max-restarts = 3
+max-seconds = 5
+
+[[supervisors.children]]
+name = "perm-worker"
+type = "worker"
+restart = "permanent"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    manifest::validate(&m).expect("Should be valid");
+    assert_eq!(m.supervisors[0].children[0].restart, "permanent");
+
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    let sup = std::fs::read_to_string(output_dir.join("lib/restart_perm/main_supervisor.ex"))
+        .expect("read");
+    // Permanent workers use simplified spec (no explicit restart atom).
+    assert!(sup.contains("RestartPerm.PermWorker"), "Worker module referenced");
+}
+
+#[test]
+fn test_all_restart_types_transient() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "restart_trans"
+entry = "RestartTrans.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "main"
+strategy = "one_for_one"
+max-restarts = 3
+max-seconds = 5
+
+[[supervisors.children]]
+name = "trans-worker"
+type = "worker"
+restart = "transient"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    manifest::validate(&m).expect("Should be valid");
+
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    let sup = std::fs::read_to_string(output_dir.join("lib/restart_trans/main_supervisor.ex"))
+        .expect("read");
+    assert!(sup.contains("restart: :transient"), "Transient restart must be explicit");
+}
+
+#[test]
+fn test_all_restart_types_temporary() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "restart_temp"
+entry = "RestartTemp.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "main"
+strategy = "one_for_one"
+max-restarts = 3
+max-seconds = 5
+
+[[supervisors.children]]
+name = "temp-worker"
+type = "worker"
+restart = "temporary"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    manifest::validate(&m).expect("Should be valid");
+
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    let sup = std::fs::read_to_string(output_dir.join("lib/restart_temp/main_supervisor.ex"))
+        .expect("read");
+    assert!(sup.contains("restart: :temporary"), "Temporary restart must be explicit");
+}
+
+#[test]
+fn test_max_restarts_boundary_zero() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "boundary_app"
+entry = "BoundaryApp.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "strict"
+strategy = "one_for_one"
+max-restarts = 0
+max-seconds = 1
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    manifest::validate(&m).expect("Zero max-restarts is valid");
+
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    let sup = std::fs::read_to_string(output_dir.join("lib/boundary_app/strict_supervisor.ex"))
+        .expect("read");
+    assert!(sup.contains("max_restarts: 0"), "Zero restarts should be in output");
+}
+
+#[test]
+fn test_max_restarts_boundary_high() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "high_restart"
+entry = "HighRestart.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "generous"
+strategy = "one_for_one"
+max-restarts = 1000
+max-seconds = 3600
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    manifest::validate(&m).expect("High values are valid");
+
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    let sup = std::fs::read_to_string(output_dir.join("lib/high_restart/generous_supervisor.ex"))
+        .expect("read");
+    assert!(sup.contains("max_restarts: 1000"));
+    assert!(sup.contains("max_seconds: 3600"));
+}
+
+#[test]
+fn test_max_seconds_zero_rejected() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "bad_seconds"
+entry = "BadSeconds.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "broken"
+strategy = "one_for_one"
+max-restarts = 3
+max-seconds = 0
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    let result = manifest::validate(&m);
+    assert!(result.is_err(), "max-seconds = 0 should fail validation");
+}
+
+#[test]
+fn test_invalid_restart_type_rejected() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "bad_restart"
+entry = "BadRestart.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "main"
+strategy = "one_for_one"
+max-restarts = 3
+max-seconds = 5
+
+[[supervisors.children]]
+name = "broken"
+type = "worker"
+restart = "always"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    let result = manifest::validate(&m);
+    assert!(result.is_err(), "Invalid restart type 'always' should fail validation");
+}
+
+#[test]
+fn test_invalid_flag_rejected() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "bad_flags"
+entry = "BadFlags.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[options]
+flags = ["nonexistent-flag"]
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    let result = manifest::validate(&m);
+    assert!(result.is_err(), "Unknown flag should fail validation");
+}
+
+// ===========================================================================
+// Aspect tests: code quality of generated output
+// ===========================================================================
+
+#[test]
+fn test_generated_elixir_has_proper_camelcase_module_naming() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "name-test-app"
+entry = "NameTestApp.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "my-cool-supervisor"
+strategy = "one_for_one"
+max-restarts = 3
+max-seconds = 5
+
+[[supervisors.children]]
+name = "http-request-handler"
+type = "worker"
+restart = "permanent"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    let sup = std::fs::read_to_string(output_dir.join("lib/name_test_app/my_cool_supervisor_supervisor.ex"))
+        .expect("read supervisor");
+    // Module name should be CamelCase.
+    assert!(sup.contains("NameTestApp.MyCoolSupervisorSupervisor"), "Supervisor module uses CamelCase");
+
+    let worker = std::fs::read_to_string(output_dir.join("lib/name_test_app/http_request_handler.ex"))
+        .expect("read worker");
+    assert!(worker.contains("NameTestApp.HttpRequestHandler"), "Worker module uses CamelCase");
+}
+
+#[test]
+fn test_mix_exs_references_correct_application_module() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "mix_ref_test"
+entry = "MixRefTest.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    let mix = std::fs::read_to_string(output_dir.join("mix.exs")).expect("read mix.exs");
+    // mod: {MixRefTest.Application, []} must appear.
+    assert!(mix.contains("MixRefTest.Application"), "mix.exs must reference the Application module");
+    // app atom must match.
+    assert!(mix.contains("app: :mix_ref_test"), "mix.exs must have correct app atom");
+    // MixProject module naming.
+    assert!(mix.contains("defmodule MixRefTest.MixProject do"), "MixProject module definition");
+}
+
+#[test]
+fn test_supervision_tree_diagram_is_valid_ascii() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "diagram_test"
+entry = "DiagramTest.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "alpha"
+strategy = "one_for_all"
+max-restarts = 5
+max-seconds = 10
+
+[[supervisors.children]]
+name = "worker-one"
+type = "worker"
+restart = "permanent"
+
+[[supervisors.children]]
+name = "worker-two"
+type = "worker"
+restart = "transient"
+
+[[supervisors]]
+name = "beta"
+strategy = "rest_for_one"
+max-restarts = 3
+max-seconds = 5
+
+[[supervisors.children]]
+name = "worker-three"
+type = "worker"
+restart = "temporary"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    let diagram = std::fs::read_to_string(output_dir.join("SUPERVISION_TREE.txt"))
+        .expect("read diagram");
+
+    // Must contain the header.
+    assert!(diagram.contains("Supervision Tree: diagram_test"), "Header present");
+    // Must contain both supervisors.
+    assert!(diagram.contains("AlphaSupervisor"), "Alpha supervisor in diagram");
+    assert!(diagram.contains("BetaSupervisor"), "Beta supervisor in diagram");
+    // Must contain workers.
+    assert!(diagram.contains("WorkerOne"), "WorkerOne in diagram");
+    assert!(diagram.contains("WorkerTwo"), "WorkerTwo in diagram");
+    assert!(diagram.contains("WorkerThree"), "WorkerThree in diagram");
+    // Must contain legend.
+    assert!(diagram.contains("Legend:"), "Legend section present");
+    // Must be valid UTF-8 with only printable characters, newlines, and common punctuation.
+    // The diagram uses em-dash (—) which is valid UTF-8 but not ASCII.
+    assert!(
+        diagram.chars().all(|c| c.is_ascii() || c == '\u{2014}'),
+        "Diagram should only contain ASCII and em-dash characters"
+    );
+    // Must contain strategy annotations.
+    assert!(diagram.contains("one_for_all"), "Strategy annotation in diagram");
+    assert!(diagram.contains("rest_for_one"), "Strategy annotation in diagram");
+}
+
+#[test]
+fn test_generated_test_files_use_exunit() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "exunit_check"
+entry = "ExunitCheck.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[options]
+generate-tests = true
+
+[[supervisors]]
+name = "main"
+strategy = "one_for_one"
+max-restarts = 3
+max-seconds = 5
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    let helper = std::fs::read_to_string(output_dir.join("test/test_helper.exs"))
+        .expect("read test_helper");
+    assert!(helper.contains("ExUnit.start()"), "test_helper.exs must call ExUnit.start()");
+
+    let test = std::fs::read_to_string(output_dir.join("test/exunit_check_test.exs"))
+        .expect("read test");
+    assert!(test.contains("use ExUnit.Case"), "Test module must use ExUnit.Case");
+    assert!(test.contains("ExunitCheck"), "Test module references the app");
+}
+
+#[test]
+fn test_generate_tests_false_skips_test_files() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "no_tests"
+entry = "NoTests.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[options]
+generate-tests = false
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    assert!(!output_dir.join("test").exists(), "test/ dir should not exist when generate-tests = false");
+}
+
+#[test]
+fn test_generated_files_have_spdx_headers() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "spdx_check"
+entry = "SpdxCheck.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "main"
+strategy = "one_for_one"
+max-restarts = 3
+max-seconds = 5
+
+[[supervisors.children]]
+name = "worker-a"
+type = "worker"
+restart = "permanent"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    // Note: without explicit [options] generate-tests = true, test files may not exist.
+    // The manifest above does not include [options], so only check generated lib files.
+    let files_to_check = vec![
+        "mix.exs",
+        ".formatter.exs",
+        "lib/spdx_check/application.ex",
+        "lib/spdx_check/main_supervisor.ex",
+        "lib/spdx_check/worker_a.ex",
+    ];
+    for file in &files_to_check {
+        let content = std::fs::read_to_string(output_dir.join(file))
+            .unwrap_or_else(|_| panic!("Should read {}", file));
+        assert!(
+            content.contains("SPDX-License-Identifier: PMPL-1.0-or-later"),
+            "File {} must have SPDX header",
+            file
+        );
+    }
+}
+
+#[test]
+fn test_module_name_edge_cases() {
+    // Multiple consecutive delimiters.
+    assert_eq!(manifest::to_module_name("a--b"), "AB");
+    // Leading/trailing delimiters.
+    assert_eq!(manifest::to_module_name("-leading"), "Leading");
+    assert_eq!(manifest::to_module_name("trailing-"), "Trailing");
+    // Mixed delimiters.
+    assert_eq!(manifest::to_module_name("mix-ed_case"), "MixEdCase");
+    // Single character.
+    assert_eq!(manifest::to_module_name("x"), "X");
+    // Empty string.
+    assert_eq!(manifest::to_module_name(""), "");
+}
+
+#[test]
+fn test_atom_name_edge_cases() {
+    assert_eq!(manifest::to_atom_name("already_snake"), "already_snake");
+    assert_eq!(manifest::to_atom_name("multi--dash"), "multi__dash");
+    assert_eq!(manifest::to_atom_name("no-dash"), "no_dash");
+}
+
+#[test]
+fn test_worker_module_with_explicit_module_name() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "mod_override"
+entry = "ModOverride.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+
+[[supervisors]]
+name = "main"
+strategy = "one_for_one"
+max-restarts = 3
+max-seconds = 5
+
+[[supervisors.children]]
+name = "my-cache"
+type = "worker"
+module = "Redis.CacheAdapter"
+restart = "permanent"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let m = manifest::load_manifest(&manifest_path).expect("Should parse");
+    let output_dir = tmp.path().join("output");
+    otpiser::codegen::generate_all(&m, output_dir.to_str().unwrap()).expect("codegen");
+
+    // Worker file uses the atom name of the child name, not the module override.
+    assert!(output_dir.join("lib/mod_override/my_cache.ex").exists());
+    let worker = std::fs::read_to_string(output_dir.join("lib/mod_override/my_cache.ex"))
+        .expect("read worker");
+    // Module name should use the explicit module field.
+    assert!(
+        worker.contains("ModOverride.Redis.CacheAdapter"),
+        "Worker must use explicit module name"
+    );
+}
+
+// ===========================================================================
+// ABI tests: ProcessTree methods and types
+// ===========================================================================
+
+use otpiser::abi::{
+    ChildRestartType, ChildSpec, ChildType, ProcessTree, RestartIntensity, ShutdownType,
+    SupervisorStrategy,
+};
+
+#[test]
+fn test_process_tree_depth_single_worker() {
+    let tree = ProcessTree::WorkerNode {
+        spec: ChildSpec {
+            child_id: "w1".to_string(),
+            start_module: "W1".to_string(),
+            start_args: vec![],
+            restart_type: ChildRestartType::Permanent,
+            shutdown: ShutdownType::Timeout(5000),
+            child_type: ChildType::Worker,
+        },
+    };
+    assert_eq!(tree.depth(), 0, "Single worker has depth 0");
+}
+
+#[test]
+fn test_process_tree_depth_one_level() {
+    let tree = ProcessTree::SupervisorNode {
+        name: "root".to_string(),
+        strategy: SupervisorStrategy::OneForOne,
+        intensity: RestartIntensity::default(),
+        children: vec![
+            ProcessTree::WorkerNode {
+                spec: ChildSpec {
+                    child_id: "w1".to_string(),
+                    start_module: "W1".to_string(),
+                    start_args: vec![],
+                    restart_type: ChildRestartType::Permanent,
+                    shutdown: ShutdownType::Timeout(5000),
+                    child_type: ChildType::Worker,
+                },
+            },
+        ],
+    };
+    assert_eq!(tree.depth(), 1, "Supervisor with worker child has depth 1");
+}
+
+#[test]
+fn test_process_tree_depth_three_levels() {
+    let tree = ProcessTree::SupervisorNode {
+        name: "root".to_string(),
+        strategy: SupervisorStrategy::OneForOne,
+        intensity: RestartIntensity::default(),
+        children: vec![
+            ProcessTree::SupervisorNode {
+                name: "mid".to_string(),
+                strategy: SupervisorStrategy::OneForAll,
+                intensity: RestartIntensity::default(),
+                children: vec![
+                    ProcessTree::SupervisorNode {
+                        name: "deep".to_string(),
+                        strategy: SupervisorStrategy::RestForOne,
+                        intensity: RestartIntensity::default(),
+                        children: vec![
+                            ProcessTree::WorkerNode {
+                                spec: ChildSpec {
+                                    child_id: "leaf".to_string(),
+                                    start_module: "Leaf".to_string(),
+                                    start_args: vec![],
+                                    restart_type: ChildRestartType::Transient,
+                                    shutdown: ShutdownType::Timeout(5000),
+                                    child_type: ChildType::Worker,
+                                },
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+    };
+    assert_eq!(tree.depth(), 3, "Three levels of supervisors gives depth 3");
+}
+
+#[test]
+fn test_process_tree_worker_count_across_tree() {
+    let tree = ProcessTree::SupervisorNode {
+        name: "root".to_string(),
+        strategy: SupervisorStrategy::OneForOne,
+        intensity: RestartIntensity::default(),
+        children: vec![
+            ProcessTree::WorkerNode {
+                spec: ChildSpec {
+                    child_id: "w1".to_string(),
+                    start_module: "W1".to_string(),
+                    start_args: vec![],
+                    restart_type: ChildRestartType::Permanent,
+                    shutdown: ShutdownType::Timeout(5000),
+                    child_type: ChildType::Worker,
+                },
+            },
+            ProcessTree::SupervisorNode {
+                name: "sub".to_string(),
+                strategy: SupervisorStrategy::OneForAll,
+                intensity: RestartIntensity::default(),
+                children: vec![
+                    ProcessTree::WorkerNode {
+                        spec: ChildSpec {
+                            child_id: "w2".to_string(),
+                            start_module: "W2".to_string(),
+                            start_args: vec![],
+                            restart_type: ChildRestartType::Transient,
+                            shutdown: ShutdownType::BrutalKill,
+                            child_type: ChildType::Worker,
+                        },
+                    },
+                    ProcessTree::WorkerNode {
+                        spec: ChildSpec {
+                            child_id: "w3".to_string(),
+                            start_module: "W3".to_string(),
+                            start_args: vec![],
+                            restart_type: ChildRestartType::Temporary,
+                            shutdown: ShutdownType::Infinity,
+                            child_type: ChildType::Worker,
+                        },
+                    },
+                ],
+            },
+        ],
+    };
+    assert_eq!(tree.worker_count(), 3, "Should count all 3 workers");
+    assert_eq!(tree.size(), 5, "Total nodes: 2 supervisors + 3 workers = 5");
+}
+
+#[test]
+fn test_process_tree_empty_supervisor() {
+    let tree = ProcessTree::SupervisorNode {
+        name: "empty".to_string(),
+        strategy: SupervisorStrategy::OneForOne,
+        intensity: RestartIntensity::default(),
+        children: vec![],
+    };
+    assert_eq!(tree.depth(), 1, "Empty supervisor has depth 1");
+    assert_eq!(tree.worker_count(), 0, "Empty supervisor has 0 workers");
+    assert_eq!(tree.size(), 1, "Empty supervisor counts as 1 node");
+}
+
+#[test]
+fn test_strategy_enum_values() {
+    // Verify repr values match expected ABI constants.
+    assert_eq!(SupervisorStrategy::OneForOne as u32, 0);
+    assert_eq!(SupervisorStrategy::OneForAll as u32, 1);
+    assert_eq!(SupervisorStrategy::RestForOne as u32, 2);
+}
+
+#[test]
+fn test_child_restart_type_enum_values() {
+    assert_eq!(ChildRestartType::Permanent as u32, 0);
+    assert_eq!(ChildRestartType::Transient as u32, 1);
+    assert_eq!(ChildRestartType::Temporary as u32, 2);
+}
+
+#[test]
+fn test_child_type_enum_values() {
+    assert_eq!(ChildType::Worker as u32, 0);
+    assert_eq!(ChildType::Supervisor as u32, 1);
+}
+
+#[test]
+fn test_restart_intensity_default() {
+    let default = RestartIntensity::default();
+    assert_eq!(default.max_restarts, 3, "Default max_restarts is 3");
+    assert_eq!(default.max_seconds, 5, "Default max_seconds is 5");
+}
+
+#[test]
+fn test_shutdown_type_variants() {
+    let timeout = ShutdownType::Timeout(5000);
+    let brutal = ShutdownType::BrutalKill;
+    let infinity = ShutdownType::Infinity;
+
+    assert_eq!(timeout, ShutdownType::Timeout(5000));
+    assert_ne!(timeout, brutal);
+    assert_ne!(brutal, infinity);
+}
+
+#[test]
+fn test_convenience_generate_function() {
+    let tmp = TempDir::new().expect("Failed to create temp dir");
+    let manifest_toml = r#"
+[workload]
+name = "conv_test"
+entry = "ConvTest.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "In"
+output-type = "Out"
+"#;
+    let manifest_path = write_manifest(&tmp, manifest_toml);
+    let output_dir = tmp.path().join("output");
+
+    // Use the top-level convenience function.
+    otpiser::generate(
+        &manifest_path,
+        output_dir.to_str().unwrap(),
+    )
+    .expect("Convenience generate function should succeed");
+
+    assert!(output_dir.join("mix.exs").exists());
+    assert!(output_dir.join("lib/conv_test/application.ex").exists());
+}
