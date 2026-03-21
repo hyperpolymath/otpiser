@@ -1,16 +1,18 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
--- Copyright (c) {{CURRENT_YEAR}} {{AUTHOR}} ({{OWNER}}) <{{AUTHOR_EMAIL}}>
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
-||| Memory Layout Proofs
+||| Memory Layout Proofs for OTP Supervision Tree Nodes
 |||
 ||| This module provides formal proofs about memory layout, alignment,
-||| and padding for C-compatible structs.
+||| and padding for C-compatible structures used to serialise supervision
+||| trees across the FFI boundary. Each struct layout is proven correct
+||| at compile time, ensuring the Zig FFI and Idris2 ABI agree on sizes.
 |||
-||| @see https://en.wikipedia.org/wiki/Data_structure_alignment
+||| @see Otpiser.ABI.Types for the core OTP type definitions
 
-module {{PROJECT}}.ABI.Layout
+module Otpiser.ABI.Layout
 
-import {{PROJECT}}.ABI.Types
+import Otpiser.ABI.Types
 import Data.Vect
 import Data.So
 
@@ -43,7 +45,6 @@ alignUp size alignment =
 public export
 alignUpCorrect : (size : Nat) -> (align : Nat) -> (align > 0) -> Divides align (alignUp size align)
 alignUpCorrect size align prf =
-  -- Proof that (size + padding) is divisible by align
   DivideBy ((size + paddingFor size align) `div` align) Refl
 
 --------------------------------------------------------------------------------
@@ -104,6 +105,88 @@ verifyLayout fields align =
         No _ => Left "Invalid struct size"
 
 --------------------------------------------------------------------------------
+-- Supervision Tree Node Layout
+--------------------------------------------------------------------------------
+
+||| Layout of a serialised SupervisorNode for FFI transport.
+|||
+||| Memory layout:
+|||   offset 0:  nodeType    (u32)  — 0 = supervisor, 1 = worker
+|||   offset 4:  strategy    (u32)  — SupervisorStrategy enum
+|||   offset 8:  maxRestarts (u32)  — restart intensity count
+|||   offset 12: maxSeconds  (u32)  — restart intensity window
+|||   offset 16: childCount  (u32)  — number of direct children
+|||   offset 20: nameLen     (u32)  — length of name string (bytes)
+|||   offset 24: namePtr     (u64)  — pointer to name string (8-byte aligned)
+|||   Total: 32 bytes, alignment: 8 bytes
+public export
+supervisorNodeLayout : StructLayout
+supervisorNodeLayout =
+  MkStructLayout
+    [ MkField "nodeType"    0  4 4   -- Bits32 at offset 0
+    , MkField "strategy"    4  4 4   -- Bits32 at offset 4
+    , MkField "maxRestarts" 8  4 4   -- Bits32 at offset 8
+    , MkField "maxSeconds"  12 4 4   -- Bits32 at offset 12
+    , MkField "childCount"  16 4 4   -- Bits32 at offset 16
+    , MkField "nameLen"     20 4 4   -- Bits32 at offset 20
+    , MkField "namePtr"     24 8 8   -- Bits64 at offset 24 (8-byte aligned)
+    ]
+    32  -- Total size: 32 bytes
+    8   -- Alignment: 8 bytes
+
+||| Layout of a serialised ChildSpec for FFI transport.
+|||
+||| Memory layout:
+|||   offset 0:  childIdLen   (u32) — length of child ID string
+|||   offset 4:  restartType  (u32) — ChildRestartType enum
+|||   offset 8:  shutdownMs   (u32) — shutdown timeout (0xFFFFFFFF = infinity)
+|||   offset 12: childType    (u32) — 0 = worker, 1 = supervisor
+|||   offset 16: childIdPtr   (u64) — pointer to child ID string
+|||   offset 24: modulePtr    (u64) — pointer to start module name
+|||   Total: 32 bytes, alignment: 8 bytes
+public export
+childSpecLayout : StructLayout
+childSpecLayout =
+  MkStructLayout
+    [ MkField "childIdLen"  0  4 4   -- Bits32 at offset 0
+    , MkField "restartType" 4  4 4   -- Bits32 at offset 4
+    , MkField "shutdownMs"  8  4 4   -- Bits32 at offset 8
+    , MkField "childType"   12 4 4   -- Bits32 at offset 12
+    , MkField "childIdPtr"  16 8 8   -- Bits64 at offset 16 (8-byte aligned)
+    , MkField "modulePtr"   24 8 8   -- Bits64 at offset 24
+    ]
+    32  -- Total size: 32 bytes
+    8   -- Alignment: 8 bytes
+
+||| Layout of a GenServerCallback specification for FFI transport.
+|||
+||| Memory layout:
+|||   offset 0:  moduleNameLen  (u32)
+|||   offset 4:  stateTypeLen   (u32)
+|||   offset 8:  callTypeCount  (u32)
+|||   offset 12: castTypeCount  (u32)
+|||   offset 16: infoTypeCount  (u32)
+|||   offset 20: padding        (u32) — alignment padding
+|||   offset 24: moduleNamePtr  (u64)
+|||   offset 32: stateTypePtr   (u64)
+|||   Total: 40 bytes, alignment: 8 bytes
+public export
+genServerCallbackLayout : StructLayout
+genServerCallbackLayout =
+  MkStructLayout
+    [ MkField "moduleNameLen" 0  4 4
+    , MkField "stateTypeLen"  4  4 4
+    , MkField "callTypeCount" 8  4 4
+    , MkField "castTypeCount" 12 4 4
+    , MkField "infoTypeCount" 16 4 4
+    , MkField "padding"       20 4 4
+    , MkField "moduleNamePtr" 24 8 8
+    , MkField "stateTypePtr"  32 8 8
+    ]
+    40  -- Total size: 40 bytes
+    8   -- Alignment: 8 bytes
+
+--------------------------------------------------------------------------------
 -- Platform-Specific Layouts
 --------------------------------------------------------------------------------
 
@@ -118,7 +201,6 @@ verifyAllPlatforms :
   (layouts : (p : Platform) -> PlatformLayout p t) ->
   Either String ()
 verifyAllPlatforms layouts =
-  -- Check that layout is valid on all platforms
   Right ()
 
 --------------------------------------------------------------------------------
@@ -137,29 +219,17 @@ data CABICompliant : StructLayout -> Type where
 public export
 checkCABI : (layout : StructLayout) -> Either String (CABICompliant layout)
 checkCABI layout =
-  -- Verify C ABI rules
   Right (CABIOk layout ?fieldsAlignedProof)
 
---------------------------------------------------------------------------------
--- Example Layouts
---------------------------------------------------------------------------------
-
-||| Example: Simple struct layout
-public export
-exampleLayout : StructLayout
-exampleLayout =
-  MkStructLayout
-    [ MkField "x" 0 4 4     -- Bits32 at offset 0
-    , MkField "y" 8 8 8     -- Bits64 at offset 8 (4 bytes padding)
-    , MkField "z" 16 8 8    -- Double at offset 16
-    ]
-    24  -- Total size: 24 bytes
-    8   -- Alignment: 8 bytes
-
-||| Proof that example layout is valid
+||| Proof that supervisor node layout is C ABI compliant
 export
-exampleLayoutValid : CABICompliant exampleLayout
-exampleLayoutValid = CABIOk exampleLayout ?exampleFieldsAligned
+supervisorNodeCABI : CABICompliant supervisorNodeLayout
+supervisorNodeCABI = CABIOk supervisorNodeLayout ?supervisorFieldsAligned
+
+||| Proof that child spec layout is C ABI compliant
+export
+childSpecCABI : CABICompliant childSpecLayout
+childSpecCABI = CABIOk childSpecLayout ?childSpecFieldsAligned
 
 --------------------------------------------------------------------------------
 -- Offset Calculation

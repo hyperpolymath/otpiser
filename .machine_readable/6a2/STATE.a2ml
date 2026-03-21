@@ -5,31 +5,38 @@
 (state
   (metadata
     (version "0.1.0")
-    (last-updated "2026-03-20")
+    (last-updated "2026-03-21")
     (author "Jonathan D.A. Jewell"))
 
   (project-context
     (name "otpiser")
-    (description "Generate OTP supervision trees and fault-tolerance scaffolding")
-    (status "scaffold")
+    (description "Generate OTP supervision trees, GenServers, GenStateMachines, and fault-tolerance scaffolding from service descriptions")
+    (status "scaffold-documented")
     (priority "—")
     (ecosystem "-iser family (https://github.com/hyperpolymath/iseriser)"))
 
   (current-position
-    (phase "initial-scaffold")
-    (completion-percentage 5)
-    (milestone "Architecture defined, CLI scaffolded, RSR template complete"))
+    (phase "scaffold-documented")
+    (completion-percentage 10)
+    (milestone "Architecture defined, CLI scaffolded, ABI/FFI bespoke for OTP, full documentation"))
 
   (route-to-mvp
-    (step 1 "Replace codegen stubs with target-language-specific generation")
-    (step 2 "Implement Idris2 ABI proofs for core invariants")
-    (step 3 "Build Zig FFI bridge")
-    (step 4 "Integration tests with real-world examples")
-    (step 5 "Documentation and examples"))
+    (step 1 "Implement manifest parser for OTP-specific fields (services, strategies, SLAs)")
+    (step 2 "Build dependency graph from service descriptions")
+    (step 3 "Implement strategy selection engine (one_for_one, one_for_all, rest_for_one)")
+    (step 4 "Implement restart intensity calculator from SLA definitions")
+    (step 5 "Generate Elixir Application and Supervisor modules")
+    (step 6 "Generate GenServer modules with typed callbacks")
+    (step 7 "Generate DynamicSupervisor and Registry modules")
+    (step 8 "Generate mix.exs, config, and ExUnit tests")
+    (step 9 "First working end-to-end example (payment gateway)")
+    (step 10 "Idris2 ABI proofs for tree correctness invariants")
+    (step 11 "Zig FFI NIF bridge for performance-critical paths"))
 
   (blockers-and-issues
-    (none "Project is in scaffold phase — no blockers yet"))
+    (none "Project is in documented scaffold phase — no blockers yet"))
 
   (critical-next-actions
-    (action "Implement codegen for primary use case")
-    (action "Write first working example end-to-end")))
+    (action "Expand otpiser.toml manifest schema with service/supervisor/SLA sections")
+    (action "Implement supervision tree topology computation from dependency graph")
+    (action "Write first working example: single-service one_for_one supervision")))

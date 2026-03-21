@@ -6,12 +6,13 @@
   (version "0.1.0")
   (name "otpiser")
   (type "tool")
-  (purpose "Generate OTP supervision trees and fault-tolerance scaffolding")
+  (purpose "Generate OTP supervision trees, GenServers, GenStateMachines, and fault-tolerance scaffolding from service descriptions")
 
   (position-in-ecosystem
     (family "-iser acceleration frameworks")
     (meta-framework "iseriser")
     (relationship "sibling")
+    (domain "Fault-tolerant distributed systems (Erlang/OTP/BEAM)")
     (top-3 ("typedqliser" "chapeliser" "verisimiser")))
 
   (related-projects
@@ -23,16 +24,25 @@
       (description "Formal type safety for any query language"))
     (project "chapeliser"
       (relationship "sibling-priority-2")
-      (description "Chapel distributed computing acceleration"))
+      (description "Chapel distributed computing acceleration — otpiser can supervise Chapel workers"))
     (project "verisimiser"
       (relationship "sibling-priority-3")
-      (description "VeriSimDB octad database augmentation"))
+      (description "VeriSimDB octad database augmentation — otpiser can supervise DB connections"))
+    (project "burble"
+      (relationship "consumer")
+      (description "Voice platform — uses OTP supervision for call handling, WebRTC, and media pipelines"))
     (project "squeakwell"
       (relationship "sibling")
       (description "Database recovery via constraint propagation"))
     (project "proven"
       (relationship "dependency")
-      (description "Shared Idris2 verified library"))
+      (description "Shared Idris2 verified library — provides foundational proofs"))
     (project "typell"
       (relationship "dependency")
-      (description "Type theory engine"))))
+      (description "Type theory engine — powers type-level supervision tree analysis"))
+    (project "panll"
+      (relationship "integration")
+      (description "Panel framework — supervision tree visualisation panel"))
+    (project "boj-server"
+      (relationship "integration")
+      (description "BoJ cartridge for OTP scaffolding generation"))))

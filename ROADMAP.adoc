@@ -1,32 +1,70 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 = otpiser Roadmap
 :toc:
 :icons: font
 
 == Phase 0: Scaffold (COMPLETE)
-* [x] RSR template with full CI/CD
-* [x] CLI with subcommands
-* [x] Manifest parser
+* [x] RSR template with full CI/CD (17 workflows)
+* [x] CLI with subcommands (init, validate, generate, build, run, info)
+* [x] Manifest parser (`otpiser.toml`)
 * [x] Codegen stubs
-* [x] ABI module stubs
-* [x] README with architecture
+* [x] Idris2 ABI module stubs (Types, Layout, Foreign)
+* [x] Zig FFI stubs with lifecycle, error handling, version
+* [x] README with architecture and OTP concept overview
 
-== Phase 1: Core Implementation
-* [ ] Implement target-language-specific code generation
-* [ ] Write Idris2 ABI proofs for core invariants
-* [ ] Build Zig FFI bridge
-* [ ] First working end-to-end example
-* [ ] Integration tests
+== Phase 1: Supervision Tree Generation
+* [ ] Parse `otpiser.toml` into a service dependency graph
+* [ ] Compute supervision tree topology from dependency analysis
+* [ ] Strategy selection engine: `one_for_one`, `one_for_all`, `rest_for_one`
+* [ ] Restart intensity calculator (`max_restarts` / `max_seconds` from SLA)
+* [ ] Child spec ordering with dependency-aware startup sequence
+* [ ] Generate Elixir `Application` module with `start/2`
+* [ ] Generate root `Supervisor` with computed strategy and child specs
+* [ ] Generate nested supervisors for service groups
+* [ ] First working end-to-end example (single-service supervision)
 
-== Phase 2: Polish
-* [ ] Error messages and diagnostics
+== Phase 2: GenServer and Process Scaffolding
+* [ ] Generate `GenServer` modules with typed state and callbacks
+* [ ] Generate `GenStateMachine` modules for state-machine services
+* [ ] Generate `DynamicSupervisor` for on-demand worker pools
+* [ ] Generate `Registry` for named process lookup
+* [ ] Generate `Task.Supervisor` for async work patterns
+* [ ] Health check GenServer with configurable probes
+* [ ] Circuit breaker module (trip/reset/half-open state machine)
+* [ ] Backpressure mechanism via `GenStage` demand management
+* [ ] Write Idris2 ABI proofs for supervision tree invariants
+* [ ] Build Zig FFI bridge for NIF hot paths
+
+== Phase 3: Advanced OTP Patterns
+* [ ] Multi-node distribution support (`:pg` process groups, `:net_kernel`)
+* [ ] Hot code upgrade scaffolding (`code_change/3` callbacks)
+* [ ] ETS table management with supervised ownership
+* [ ] Telemetry event emission for all supervised processes
+* [ ] Graceful shutdown orchestration (drain connections, flush queues)
+* [ ] Partition tolerance patterns (netsplit detection and recovery)
+
+== Phase 4: Elixir Ecosystem Integration
+* [ ] Generate `mix.exs` with correct dependencies
+* [ ] Generate `config/config.exs` and `config/runtime.exs`
+* [ ] Generate ExUnit test scaffolding for each GenServer
+* [ ] Generate Livebook notebook for interactive supervision tree exploration
+* [ ] Broadway pipeline scaffolding for message queue consumers
+* [ ] Phoenix integration (supervised channels, PubSub)
+
+== Phase 5: Polish and Diagnostics
+* [ ] Error messages with OTP-specific guidance (common supervision pitfalls)
 * [ ] Shell completions (bash, zsh, fish)
-* [ ] CI/CD for the generated artifacts
-* [ ] Performance benchmarks
-* [ ] Additional examples
+* [ ] `otpiser doctor` command (validate Elixir/Erlang toolchain)
+* [ ] `otpiser visualise` command (ASCII art supervision tree)
+* [ ] Performance benchmarks (generation speed, generated code efficiency)
+* [ ] Additional examples (microservice mesh, IoT fleet, chat system)
+* [ ] CI/CD templates for generated projects (GitHub Actions, GitLab CI)
 
-== Phase 3: Ecosystem
-* [ ] PanLL panel integration
-* [ ] BoJ-server cartridge
-* [ ] VeriSimDB backing store for results
+== Phase 6: Ecosystem
+* [ ] PanLL panel integration (supervision tree visual panel)
+* [ ] BoJ-server cartridge for OTP scaffolding
+* [ ] VeriSimDB backing store for supervision tree state snapshots
 * [ ] Publish to crates.io
+* [ ] Integration with Burble (voice platform supervision trees)
+* [ ] Cross-iser composition (otpiser + chapeliser for distributed OTP)

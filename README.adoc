@@ -7,41 +7,123 @@ Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
 == What Is This?
 
-OTPiser generates **OTP supervision trees, GenServers, and fault-tolerance
-scaffolding** from service descriptions — bringing Erlang/BEAM reliability
-to any service architecture.
+OTPiser generates **OTP supervision trees, GenServers, GenStateMachines, and
+fault-tolerance scaffolding** from service descriptions -- bringing Erlang/BEAM
+reliability to any service architecture.
 
-The "let it crash" supervision tree model is genuinely superior for
-reliability, but OTP patterns are hard to learn. OTPiser eliminates the cliff.
+The "let it crash" supervision tree model is genuinely superior for reliability,
+but OTP patterns are notoriously hard to learn correctly. Supervision strategy
+selection, restart intensity tuning, child spec ordering, and process linking
+are all sources of subtle production bugs. OTPiser eliminates the cliff.
 
 == How It Works
 
 Describe your services in `otpiser.toml`. OTPiser:
 
-1. Generates Elixir/Erlang supervision trees with correct restart strategies
-2. Creates GenServer modules for each service component
-3. Wires up health checks, circuit breakers, and backpressure
-4. Generates NIFs (via Zig FFI) for performance-critical paths
+1. Parses your service architecture into a dependency graph
+2. Generates an Elixir supervision tree with correct restart strategies
+   (`one_for_one`, `one_for_all`, `rest_for_one`)
+3. Creates GenServer modules for stateful service components
+4. Creates GenStateMachine modules for state-machine workflows
+5. Wires up `max_restarts`, `max_seconds`, and child spec ordering
+6. Generates health checks, circuit breakers, and backpressure mechanisms
+7. Emits NIFs (via Zig FFI) for performance-critical hot paths
 
-== Key Value
+== OTP Concepts Generated
 
-* **9-nines reliability patterns** without learning OTP
-* **Supervision trees generated from service descriptions**
-* **"Let it crash" philosophy** — services self-heal automatically
+=== Supervision Strategies
+
+[cols="1,3"]
+|===
+| Strategy | When OTPiser uses it
+
+| `one_for_one`
+| Independent services -- restarting one does not affect siblings
+
+| `one_for_all`
+| Tightly coupled service groups -- if one fails, restart the whole group
+
+| `rest_for_one`
+| Ordered dependency chains -- restart the failed process and everything started after it
+|===
+
+=== Generated Modules
+
+* **Application** -- top-level OTP application with `start/2` callback
+* **Root Supervisor** -- entry supervisor with configurable strategy
+* **Service Supervisors** -- per-service-group supervisors (nested trees)
+* **GenServer workers** -- stateful services with `init/1`, `handle_call/3`, `handle_cast/2`, `handle_info/2`
+* **GenStateMachine workers** -- state-machine processes with typed state transitions
+* **DynamicSupervisor** -- for services that spawn workers on demand (connection pools, consumers)
+* **Registry** -- named process registry for service discovery
+* **Task.Supervisor** -- for fire-and-forget or awaited async work
+
+=== Restart Intensity
+
+OTPiser computes safe `max_restarts` / `max_seconds` values from your service
+SLA definitions. High-availability services get aggressive restart budgets;
+best-effort services get conservative ones to avoid restart storms.
+
+== Use Cases
+
+* **Microservice resilience** -- describe your service mesh, get a battle-tested supervision tree
+* **Message queue consumers** -- GenStage/Broadway pipelines with backpressure and consumer groups
+* **Connection pool management** -- DynamicSupervisor pools with health-checked workers
+* **Distributed system orchestration** -- multi-node process groups with `:pg` and `:net_kernel`
+* **IoT device management** -- per-device GenServers under a DynamicSupervisor
+* **WebSocket/long-lived connections** -- supervised connection handlers with clean shutdown
 
 == Architecture
 
 Follows the hyperpolymath -iser pattern (same as https://github.com/hyperpolymath/chapeliser[Chapeliser]):
 
-* **Manifest** (`otpiser.toml`) — describe WHAT you want
-* **Idris2 ABI** (`src/abi/`) — formal proofs of interface correctness
-* **Zig FFI** (`ffi/zig/`) — C-ABI bridge to target language runtime
-* **Codegen** (`src/codegen/`) — generates target language wrapper code
-* **Rust CLI** — parses manifest, validates, generates, builds, runs
+* **Manifest** (`otpiser.toml`) -- describe WHAT you want
+* **Idris2 ABI** (`src/interface/abi/`) -- formal proofs of supervision tree correctness
+* **Zig FFI** (`src/interface/ffi/`) -- C-ABI bridge for NIF generation
+* **Codegen** (`src/codegen/`) -- generates Elixir modules, mix.exs, config, and tests
+* **Rust CLI** -- parses manifest, validates, generates, builds, runs
 
-User writes zero target language code. Otpiser generates everything.
+User writes zero Elixir code. OTPiser generates everything.
 
 Part of the https://github.com/hyperpolymath/iseriser[-iser family] of acceleration frameworks.
+
+== Quick Start
+
+[source,bash]
+----
+# Initialise a new otpiser manifest
+otpiser init
+
+# Edit otpiser.toml to describe your services
+# Then generate the supervision tree
+otpiser generate
+
+# Validate the manifest before generation
+otpiser validate
+
+# Build the generated Elixir project
+otpiser build
+
+# Show manifest info
+otpiser info
+----
+
+== Example Manifest
+
+[source,toml]
+----
+[workload]
+name = "payment-gateway"
+entry = "PaymentGateway.Application"
+strategy = "one_for_one"
+
+[data]
+input-type = "PaymentRequest"
+output-type = "PaymentResult"
+
+[options]
+flags = ["distributed", "health-checks"]
+----
 
 == Status
 
