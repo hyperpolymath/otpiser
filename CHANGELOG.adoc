@@ -1,0 +1,30 @@
+= Changelog
+:toc:
+// SPDX-License-Identifier: PMPL-1.0-or-later
+
+All notable changes to otpiser will be documented in this file.
+
+The format is based on https://keepachangelog.com/en/1.1.0/[Keep a Changelog],
+and this project adheres to https://semver.org/spec/v2.0.0.html[Semantic Versioning].
+
+== [0.1.0] - 2026-03-21
+
+=== Phase 1 Complete
+
+- OTP-specific manifest parser with service/supervisor/SLA sections
+- Dependency graph builder from service descriptions
+- Supervision strategy selection (one_for_one, one_for_all, rest_for_one)
+- Elixir Application, Supervisor, and GenServer codegen
+- Supervision tree diagram generator
+- Integration tests for topology and codegen
+
+=== Added (scaffold — 2026-03-20)
+
+- Initial project scaffold from rsr-template-repo
+- CLI with subcommands (init, validate, generate, build, run, info)
+- Manifest parser (`otpiser.toml`)
+- Codegen engine stubs
+- ABI module (Idris2 proof type definitions)
+- Library API for programmatic use
+- Full RSR template (17 CI workflows, governance docs, bot directives)
+- README.adoc with architecture overview

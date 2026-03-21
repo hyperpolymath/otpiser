@@ -32,6 +32,10 @@ doc:
 clean:
     cargo clean
 
+# Generate from example manifest
+generate MANIFEST="otpiser.toml":
+    cargo run -- generate {{MANIFEST}}
+
 # Run the CLI
 run *ARGS:
     cargo run -- {{ARGS}}

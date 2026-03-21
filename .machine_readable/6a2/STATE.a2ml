@@ -11,32 +11,32 @@
   (project-context
     (name "otpiser")
     (description "Generate OTP supervision trees, GenServers, GenStateMachines, and fault-tolerance scaffolding from service descriptions")
-    (status "scaffold-documented")
-    (priority "—")
+    (status "alpha")
+    (priority "medium")
     (ecosystem "-iser family (https://github.com/hyperpolymath/iseriser)"))
 
   (current-position
-    (phase "scaffold-documented")
-    (completion-percentage 10)
-    (milestone "Architecture defined, CLI scaffolded, ABI/FFI bespoke for OTP, full documentation"))
+    (phase "phase-1-complete")
+    (completion-percentage 45)
+    (milestone "Phase 1 complete — OTP manifest parser, strategy selection, Elixir codegen, diagram generator")
+    (what-changed
+      "2026-03-21: Phase 1 complete. OTP manifest parser, dependency graph, strategy selection, Elixir codegen (Application/Supervisor/GenServer), diagram generator. Integration tests passing."))
 
   (route-to-mvp
-    (step 1 "Implement manifest parser for OTP-specific fields (services, strategies, SLAs)")
-    (step 2 "Build dependency graph from service descriptions")
-    (step 3 "Implement strategy selection engine (one_for_one, one_for_all, rest_for_one)")
-    (step 4 "Implement restart intensity calculator from SLA definitions")
-    (step 5 "Generate Elixir Application and Supervisor modules")
-    (step 6 "Generate GenServer modules with typed callbacks")
-    (step 7 "Generate DynamicSupervisor and Registry modules")
-    (step 8 "Generate mix.exs, config, and ExUnit tests")
-    (step 9 "First working end-to-end example (payment gateway)")
-    (step 10 "Idris2 ABI proofs for tree correctness invariants")
-    (step 11 "Zig FFI NIF bridge for performance-critical paths"))
+    (step 1 "DONE — OTP-specific manifest parser with service/supervisor/SLA sections")
+    (step 2 "DONE — Dependency graph builder and topology computation")
+    (step 3 "DONE — Strategy selection (one_for_one, one_for_all, rest_for_one)")
+    (step 4 "DONE — Elixir Application/Supervisor/GenServer codegen")
+    (step 5 "DONE — Supervision tree diagram generator")
+    (step 6 "TODO — DynamicSupervisor and Registry codegen")
+    (step 7 "TODO — GenStateMachine codegen with state transition diagrams")
+    (step 8 "TODO — Idris2 ABI proofs for tree correctness invariants")
+    (step 9 "TODO — PanLL panel and BoJ cartridge integration"))
 
   (blockers-and-issues
-    (none "Project is in documented scaffold phase — no blockers yet"))
+    (note "Elixir/Mix not installed on dev machine — generated code verified by structure"))
 
   (critical-next-actions
-    (action "Expand otpiser.toml manifest schema with service/supervisor/SLA sections")
-    (action "Implement supervision tree topology computation from dependency graph")
-    (action "Write first working example: single-service one_for_one supervision")))
+    (action "Implement DynamicSupervisor and Registry codegen")
+    (action "Add GenStateMachine codegen with state transition diagrams")
+    (action "Write first working end-to-end example with mix test")))
