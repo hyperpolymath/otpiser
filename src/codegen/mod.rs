@@ -10,8 +10,8 @@
 // - ExUnit test files
 // - ASCII supervision tree diagram
 
-mod elixir;
 mod diagram;
+mod elixir;
 
 use anyhow::{Context, Result};
 use std::fs;
@@ -27,15 +27,13 @@ pub fn generate_all(manifest: &Manifest, output_dir: &str) -> Result<()> {
 
     // Generate mix.exs project file.
     let mix_content = elixir::generate_mix_exs(manifest);
-    fs::write(out.join("mix.exs"), &mix_content)
-        .context("Failed to write mix.exs")?;
+    fs::write(out.join("mix.exs"), &mix_content).context("Failed to write mix.exs")?;
     println!("  [gen] mix.exs");
 
     // Create lib/ directory structure.
     let app_name = crate::manifest::to_atom_name(&manifest.workload.name);
     let lib_dir = out.join("lib").join(&app_name);
-    fs::create_dir_all(&lib_dir)
-        .context("Failed to create lib directory")?;
+    fs::create_dir_all(&lib_dir).context("Failed to create lib directory")?;
 
     // Generate Application module.
     let app_content = elixir::generate_application_module(manifest);
@@ -54,7 +52,8 @@ pub fn generate_all(manifest: &Manifest, output_dir: &str) -> Result<()> {
         for sup in &manifest.supervisors {
             // Generate supervisor module.
             let sup_content = elixir::generate_supervisor_module(manifest, sup);
-            let sup_filename = format!("{}_supervisor.ex", crate::manifest::to_atom_name(&sup.name));
+            let sup_filename =
+                format!("{}_supervisor.ex", crate::manifest::to_atom_name(&sup.name));
             fs::write(lib_dir.join(&sup_filename), &sup_content)
                 .context(format!("Failed to write {}", sup_filename))?;
             println!("  [gen] lib/{}/{}", app_name, sup_filename);
@@ -63,7 +62,8 @@ pub fn generate_all(manifest: &Manifest, output_dir: &str) -> Result<()> {
             for child in &sup.children {
                 if child.child_type == "worker" {
                     let worker_content = elixir::generate_worker_module(manifest, child);
-                    let worker_filename = format!("{}.ex", crate::manifest::to_atom_name(&child.name));
+                    let worker_filename =
+                        format!("{}.ex", crate::manifest::to_atom_name(&child.name));
                     fs::write(lib_dir.join(&worker_filename), &worker_content)
                         .context(format!("Failed to write {}", worker_filename))?;
                     println!("  [gen] lib/{}/{}", app_name, worker_filename);
@@ -75,8 +75,7 @@ pub fn generate_all(manifest: &Manifest, output_dir: &str) -> Result<()> {
     // Generate test files if enabled.
     if manifest.options.generate_tests {
         let test_dir = out.join("test");
-        fs::create_dir_all(&test_dir)
-            .context("Failed to create test directory")?;
+        fs::create_dir_all(&test_dir).context("Failed to create test directory")?;
 
         let test_helper = elixir::generate_test_helper();
         fs::write(test_dir.join("test_helper.exs"), &test_helper)
@@ -98,8 +97,7 @@ pub fn generate_all(manifest: &Manifest, output_dir: &str) -> Result<()> {
 
     // Generate .formatter.exs for consistent formatting.
     let formatter = elixir::generate_formatter();
-    fs::write(out.join(".formatter.exs"), &formatter)
-        .context("Failed to write .formatter.exs")?;
+    fs::write(out.join(".formatter.exs"), &formatter).context("Failed to write .formatter.exs")?;
     println!("  [gen] .formatter.exs");
 
     Ok(())

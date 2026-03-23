@@ -4,7 +4,7 @@
 // Elixir code generation for OTP supervision trees.
 // Generates Application, Supervisor, GenServer, mix.exs, and test modules.
 
-use crate::manifest::{to_atom_name, to_module_name, ChildDef, Manifest, SupervisorDef};
+use crate::manifest::{ChildDef, Manifest, SupervisorDef, to_atom_name, to_module_name};
 
 /// Generate a mix.exs project file for the Elixir application.
 /// Includes the application callback module and standard dependencies.
@@ -58,11 +58,7 @@ pub fn generate_application_module(manifest: &Manifest) -> String {
             .supervisors
             .iter()
             .map(|sup| {
-                let sup_module = format!(
-                    "{}.{}Supervisor",
-                    root_module,
-                    to_module_name(&sup.name)
-                );
+                let sup_module = format!("{}.{}Supervisor", root_module, to_module_name(&sup.name));
                 format!("      {{{sup_module}, []}}")
             })
             .collect::<Vec<_>>()
@@ -295,11 +291,7 @@ pub fn generate_test_file(manifest: &Manifest) -> String {
             .supervisors
             .iter()
             .map(|sup| {
-                let sup_module = format!(
-                    "{}.{}Supervisor",
-                    root_module,
-                    to_module_name(&sup.name)
-                );
+                let sup_module = format!("{}.{}Supervisor", root_module, to_module_name(&sup.name));
                 format!(
                     r#"    test "{name} supervisor module is defined" do
       assert Code.ensure_loaded?({sup_module})
@@ -363,7 +355,10 @@ mod tests {
     #[test]
     fn test_extract_root_module() {
         assert_eq!(extract_root_module("MyApp.Application"), "MyApp");
-        assert_eq!(extract_root_module("Deep.Nested.Application"), "Deep.Nested");
+        assert_eq!(
+            extract_root_module("Deep.Nested.Application"),
+            "Deep.Nested"
+        );
         assert_eq!(extract_root_module("MyApp"), "MyApp");
     }
 }

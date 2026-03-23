@@ -5,7 +5,7 @@
 // Produces a visual representation of the OTP supervision hierarchy
 // showing supervisors, workers, strategies, and restart policies.
 
-use crate::manifest::{to_module_name, Manifest};
+use crate::manifest::{Manifest, to_module_name};
 
 /// Generate an ASCII supervision tree diagram from the manifest.
 /// Shows the complete hierarchy with strategies and restart types.
@@ -36,7 +36,12 @@ pub fn generate_tree_diagram(manifest: &Manifest) -> String {
             let sup_module_name = to_module_name(&sup.name);
             lines.push(format!(
                 "  {}-- {}.{}Supervisor [strategy: {}, restarts: {}/{}s]",
-                branch, root_module, sup_module_name, sup.strategy, sup.max_restarts, sup.max_seconds
+                branch,
+                root_module,
+                sup_module_name,
+                sup.strategy,
+                sup.max_restarts,
+                sup.max_seconds
             ));
 
             let child_count = sup.children.len();
@@ -65,14 +70,17 @@ pub fn generate_tree_diagram(manifest: &Manifest) -> String {
 
             // Add a blank line between supervisors (but not after the last one).
             if !is_last_sup {
-                lines.push(format!("  |"));
+                lines.push("  |".to_string());
             }
         }
     }
 
     lines.push(String::new());
     lines.push("Legend:".to_string());
-    lines.push("  [strategy: X]   — Supervision strategy (one_for_one | one_for_all | rest_for_one)".to_string());
+    lines.push(
+        "  [strategy: X]   — Supervision strategy (one_for_one | one_for_all | rest_for_one)"
+            .to_string(),
+    );
     lines.push("  [worker]        — GenServer process".to_string());
     lines.push("  [supervisor]    — Nested supervisor".to_string());
     lines.push("  restart: X      — permanent | transient | temporary".to_string());

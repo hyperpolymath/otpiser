@@ -159,8 +159,7 @@ const VALID_FLAGS: &[&str] = &[
 pub fn load_manifest(path: &str) -> Result<Manifest> {
     let content = std::fs::read_to_string(path)
         .with_context(|| format!("Failed to read manifest: {}", path))?;
-    toml::from_str(&content)
-        .with_context(|| format!("Failed to parse manifest: {}", path))
+    toml::from_str(&content).with_context(|| format!("Failed to parse manifest: {}", path))
 }
 
 /// Validate an otpiser manifest for correctness.
@@ -209,10 +208,7 @@ fn validate_supervisor(sup: &SupervisorDef) -> Result<()> {
         );
     }
     if sup.max_seconds == 0 {
-        anyhow::bail!(
-            "max-seconds must be > 0 for supervisor '{}'",
-            sup.name
-        );
+        anyhow::bail!("max-seconds must be > 0 for supervisor '{}'", sup.name);
     }
     for child in &sup.children {
         validate_child(child)?;
@@ -241,17 +237,16 @@ fn validate_child(child: &ChildDef) -> Result<()> {
             VALID_RESTART_TYPES.join(", ")
         );
     }
-    if child.child_type == "supervisor" {
-        if let Some(ref strat) = child.strategy {
-            if !VALID_STRATEGIES.contains(&strat.as_str()) {
-                anyhow::bail!(
-                    "Invalid strategy '{}' for child supervisor '{}'. Must be one of: {}",
-                    strat,
-                    child.name,
-                    VALID_STRATEGIES.join(", ")
-                );
-            }
-        }
+    if child.child_type == "supervisor"
+        && let Some(ref strat) = child.strategy
+        && !VALID_STRATEGIES.contains(&strat.as_str())
+    {
+        anyhow::bail!(
+            "Invalid strategy '{}' for child supervisor '{}'. Must be one of: {}",
+            strat,
+            child.name,
+            VALID_STRATEGIES.join(", ")
+        );
     }
     Ok(())
 }
@@ -329,10 +324,7 @@ fn print_supervisor_info(sup: &SupervisorDef, indent: usize) {
     );
     for child in &sup.children {
         let child_pad = "  ".repeat(indent + 1);
-        let module_str = child
-            .module
-            .as_deref()
-            .unwrap_or(&child.name);
+        let module_str = child.module.as_deref().unwrap_or(&child.name);
         println!(
             "{}{} [{}] module={} restart={}",
             child_pad, child.name, child.child_type, module_str, child.restart
@@ -343,7 +335,7 @@ fn print_supervisor_info(sup: &SupervisorDef, indent: usize) {
 /// Derive an Elixir module name from a kebab-case or snake_case name.
 /// e.g., "worker-pool" -> "WorkerPool", "cache" -> "Cache"
 pub fn to_module_name(name: &str) -> String {
-    name.split(|c: char| c == '-' || c == '_')
+    name.split(['-', '_'])
         .filter(|s| !s.is_empty())
         .map(|word| {
             let mut chars = word.chars();

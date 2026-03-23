@@ -102,9 +102,7 @@ pub enum ProcessTree {
         children: Vec<ProcessTree>,
     },
     /// A worker leaf node backed by a GenServer or GenStateMachine.
-    WorkerNode {
-        spec: ChildSpec,
-    },
+    WorkerNode { spec: ChildSpec },
 }
 
 impl ProcessTree {
