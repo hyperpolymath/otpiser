@@ -1,0 +1,15 @@
+// intendfile.a2ml for otpiser
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// Generated: 2026-04-08T20:03:43+01:00
+
+intendfile {
+    name: "otpiser"
+    version: "1.0.0"
+    description: "intendfile contractile for otpiser"
+    
+    // Basic intendfile configuration
+    enabled: true
+    
+    // Repository-specific intend settings will be added here
+    // This preserves the existing contractile structure and naming convention
+}
