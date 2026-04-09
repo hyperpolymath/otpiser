@@ -1,0 +1,318 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Hyperpolymath Accessibility Standard (HAS)
+# Canonical accessibility requirements for all projects
+
+@abstract:
+The Hyperpolymath Accessibility Standard (HAS) defines minimum accessibility
+requirements for all projects in the ecosystem. Compliance with HAS ensures
+that our tools are usable by everyone, regardless of ability.
+
+HAS is structured as a contractile system with three compliance levels:
+- Level A: Minimum viability (must)
+- Level AA: Recommended (should)
+- Level AAA: Enhanced (aspire)
+@end
+
+## Compliance Levels
+
+### Level A (Minimum)
+- description: Minimum accessibility for basic usability
+- required: true
+- probe: test -f .machine_readable/contractiles/adjust/Adjustfile.a2ml
+- notes: All projects must meet Level A
+
+### Level AA (Recommended)
+- description: WCAG 2.1 AA compliance
+- required: true
+- target: Q4 2026
+- notes: All user-facing projects must meet Level AA
+
+### Level AAA (Enhanced)
+- description: WCAG 2.1 AAA compliance
+- required: false
+- target: 2027
+- notes: Aspirational goal for all projects
+
+## Keyboard Accessibility (Level A)
+
+### keyboard-navigation
+- description: All functionality available via keyboard
+- compliance: A
+- probe: test -f accessibility/keyboard.ex || find . -name "*keyboard*" -type f
+- notes: Tab, arrow keys, space/enter for activation
+
+### keyboard-shortcuts
+- description: Configurable keyboard shortcuts
+- compliance: A
+- probe: grep -r "keybindings\|shortcuts" . 2>/dev/null
+- notes: User-remappable keybindings
+
+### focus-management
+- description: Visible focus indicators
+- compliance: A
+- probe: grep -r "focus\|:focus" . 2>/dev/null
+- notes: CSS focus styles required
+
+## Visual Accessibility (Level AA)
+
+### high-contrast
+- description: High contrast mode
+- compliance: AA
+- probe: grep -r "contrast\|a11y-contrast" . 2>/dev/null
+- target: 4.5:1 contrast ratio
+
+### colorblind-support
+- description: Colorblind-friendly palettes
+- compliance: AA
+- probe: find . -name "*colorblind\|*palette*" -type f
+- palettes: deuteranopia, protanopia, tritanopia
+
+### font-size-adjustment
+- description: Resizable text (14-20px)
+- compliance: AA
+- probe: grep -r "font-size\|text-scale" . 2>/dev/null
+- persistence: User preference saved
+
+### theme-switching
+- description: Dark/light/system themes
+- compliance: AA
+- probe: grep -r "theme\|dark-mode" . 2>/dev/null
+- os-preference: Respects system setting
+
+## Auditory Accessibility (Level AA)
+
+### screen-reader
+- description: Screen reader compatibility
+- compliance: AA
+- probe: find . -name "*aria\|*screenreader*" -type f
+- attributes: aria-label, aria-live, role
+
+### closed-captions
+- description: Real-time captions
+- compliance: AA
+- probe: grep -r "caption\|subtitle" . 2>/dev/null
+- accuracy: 90%+ for English
+
+### volume-normalization
+- description: Consistent volume levels
+- compliance: AA
+- probe: grep -r "volume\|loudness" . 2>/dev/null
+- standard: EBU R128 (-23 LUFS)
+
+## Motor Accessibility (Level AA)
+
+### reduced-motion
+- description: Reduced animation option
+- compliance: AA
+- probe: grep -r "motion\|animation" . 2>/dev/null
+- media-query: prefers-reduced-motion
+
+### voice-commands
+- description: Voice control interface
+- compliance: AA
+- probe: grep -r "voice\|speech" . 2>/dev/null
+- fallback: Keyboard alternative
+
+## Cognitive Accessibility (Level AAA)
+
+### clear-language
+- description: Plain language mode
+- compliance: AAA
+- probe: grep -r "simplify\|plain-language" . 2>/dev/null
+- glossary: Jargon explanations
+
+### predictable-navigation
+- description: Consistent navigation
+- compliance: AAA
+- probe: grep -r "nav\|menu" . 2>/dev/null
+- testing: User testing required
+
+### error-prevention
+- description: Confirmation for destructive actions
+- compliance: AAA
+- probe: grep -r "confirm\|warn" . 2>/dev/null
+- undo: Undo functionality
+
+## Implementation Requirements
+
+### documentation
+- description: Accessibility documentation required
+- compliance: A
+- probe: test -f docs/accessibility/README.adoc
+- format: AsciiDoc with examples
+
+### testing
+- description: Automated accessibility tests
+- compliance: AA
+- probe: grep -r "pa11y\|axe\|accessibility" .github/workflows/ 2>/dev/null
+- tools: pa11y, axe-core, or equivalent
+
+### compliance-report
+- description: VPAT compliance report
+- compliance: AA
+- probe: test -f docs/compliance/ACCESSIBILITY.adoc
+- format: VPAT 2.4 template
+
+## Compliance Matrix
+
+| Project Type | Level A | Level AA | Level AAA |
+|--------------|---------|----------|-----------|
+| Internal tools | Required | Recommended | Optional |
+| User-facing apps | Required | Required | Aspirational |
+| Public websites | Required | Required | Required |
+| Libraries/SDKs | Required | Recommended | Optional |
+
+## Validation
+
+### automated-testing
+- description: CI/CD accessibility tests
+- compliance: AA
+- probe: grep -r "accessibility" .github/workflows/ 2>/dev/null
+- tools: pa11y, axe-core, or custom
+
+### manual-testing
+- description: Manual testing required
+- compliance: AA
+- probe: test -f docs/testing/ACCESSIBILITY.adoc
+- coverage: Keyboard, screen reader, high contrast
+
+### user-testing
+- description: User testing with diverse abilities
+- compliance: AAA
+- probe: grep -r "user-testing\|usability" docs/ 2>/dev/null
+- participants: Minimum 5 diverse users
+
+## Timeline
+
+### 2026-Q2
+- description: Level A compliance for all projects
+- target: June 30, 2026
+- status: In progress
+
+### 2026-Q4
+- description: Level AA compliance for user-facing projects
+- target: December 31, 2026
+- status: Planned
+
+### 2027
+- description: Level AAA compliance for public websites
+- target: December 31, 2027
+- status: Aspirational
+
+## References
+
+### WCAG 2.1
+- url: https://www.w3.org/WAI/standards-guidelines/wcag/
+- level: AA compliance target
+
+### Section 508
+- url: https://www.section508.gov/
+- level: Equivalent to WCAG 2.1 AA
+
+### EN 301 549
+- url: https://www.etsi.org/deliver/etsi_en/301500_301599/301549/02.12.01_60/en_301549v021201p.pdf
+- level: EU public sector requirement
+
+### VPAT 2.4
+- url: https://www.itic.org/policy/accessibility/vpat
+- format: Voluntary Product Accessibility Template
+
+## Implementation Guide
+
+### For Project Maintainers
+
+1. Create accessibility module:
+   ```bash
+   mkdir -p server/lib/your_project/accessibility
+   ```
+
+2. Add Adjustfile.a2ml:
+   ```bash
+   cp /var/mnt/eclipse/repos/standards/accessibility/Adjustfile.a2ml \
+     .machine_readable/contractiles/adjust/
+   ```
+
+3. Implement keyboard navigation:
+   ```elixir
+   # Example: server/lib/your_project/accessibility/keyboard.ex
+   @default_bindings %{
+     "Space" => :ptt,
+     "m" => :mute,
+     "d" => :deafen
+   }
+   ```
+
+4. Add screen reader support:
+   ```elixir
+   # Example: server/lib/your_project/accessibility/screen_reader.ex
+   def announce_join(username, room) do
+     speak("#{username} joined #{room}")
+   end
+   ```
+
+5. Document accessibility features:
+   ```bash
+   mkdir -p docs/accessibility
+   cp /var/mnt/eclipse/repos/standards/accessibility/README.adoc \
+     docs/accessibility/
+   ```
+
+### For Developers
+
+1. Follow keyboard accessibility guidelines:
+   - All interactive elements must be keyboard-operable
+   - Provide visible focus indicators
+   - Support standard keyboard shortcuts
+
+2. Use semantic HTML:
+   ```html
+   <button aria-label="Mute microphone">Mute</button>
+   <div role="region" aria-label="Chat messages">...</div>
+   ```
+
+3. Respect user preferences:
+   ```css
+   @media (prefers-reduced-motion: reduce) {
+     * {
+       animation: none !important;
+       transition: none !important;
+     }
+   }
+   ```
+
+4. Test with screen readers:
+   - NVDA (Windows)
+   - VoiceOver (macOS)
+   - Orca (Linux)
+
+### For Testers
+
+1. Keyboard-only testing:
+   - Tab through all interactive elements
+   - Verify focus indicators
+   - Test all shortcuts
+
+2. Screen reader testing:
+   - Navigate using screen reader
+   - Verify ARIA attributes
+   - Test live regions
+
+3. High contrast testing:
+   - Enable high contrast mode
+   - Verify readability
+   - Check colorblind simulation
+
+## Compliance Checklist
+
+- [ ] Adjustfile.a2ml created
+- [ ] Keyboard navigation implemented
+- [ ] Screen reader support added
+- [ ] Accessibility documentation written
+- [ ] Automated tests added to CI
+- [ ] Manual testing completed
+- [ ] VPAT compliance report created
+
+## License
+
+SPDX-License-Identifier: PMPL-1.0-or-later
+Copyright (c) 2026 Hyperpolymath

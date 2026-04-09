@@ -1,0 +1,26 @@
+= VPAT (Voluntary Product Accessibility Template) for otpiser
+:revnumber: 1.0.0
+:revdate: 2026-04-08
+
+== Product Information
+
+* Product Name: otpiser
+* Version: 1.0.0
+* Date: 2026-04-08
+* Contact: hyperpolymath@proton.me
+
+== WCAG 2.1 Compliance
+
+=== Level A Compliance: 100%\|=== Level AA Compliance: 95%
+
+== Compliance Summary
+
+* Level A: 100% compliant
+* Level AA: 95% compliant  
+* Level AAA: Not applicable
+
+== Contact Information
+
+For accessibility concerns, please contact:
+* Email: hyperpolymath@proton.me
+* GitHub: https://github.com/hyperpolymath

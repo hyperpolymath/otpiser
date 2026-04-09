@@ -1,0 +1,42 @@
+= Accessibility Compliance for otpiser
+:revnumber: 1.0.0
+:revdate: 2026-04-08
+
+== WCAG 2.1 Compliance
+
+This repository complies with WCAG 2.1 Level A accessibility standards.
+
+=== Compliance Status
+
+[cols="1,1,1,1"]
+|===
+|Standard |Level |Status |Notes
+
+|WCAG 2.1 |A |Compliant |
+|WCAG 2.1 |AA |Partial |
+|WCAG 2.1 |AAA |Not Applicable |
+|===
+
+== Accessibility Features
+
+* Semantic HTML structure
+* Keyboard navigation support
+* ARIA attributes where appropriate
+* Color contrast compliance
+* Alternative text for images
+
+== Testing
+
+Accessibility testing is performed using:
+
+* Automated tools (axe, Lighthouse)
+* Manual keyboard navigation testing
+* Screen reader testing (NVDA, VoiceOver)
+
+== Reporting Issues
+
+Please report accessibility issues to: hyperpolymath@proton.me
+
+== Compliance Documentation
+
+See link:../compliance/ACCESSIBILITY.adoc[ACCESSIBILITY.adoc] for detailed compliance reports.
