@@ -1,56 +1,27 @@
-;; SPDX-License-Identifier: PMPL-1.0-or-later
-;; Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-;; META.a2ml — Meta-level information for otpiser
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# META.a2ml — Otpiser meta-level information
+[metadata]
+version = "0.1.0"
+last-updated = "2026-03-21"
 
-(meta
-  (version "0.1.0")
-  (last-updated "2026-03-21")
+[project-info]
+license = "PMPL-1.0-or-later"
+author = "Jonathan D.A. Jewell (hyperpolymath)"
 
-  (architecture-decisions
-    (adr "001-iser-pattern"
-      (status "accepted")
-      (context "OTP supervision trees are powerful but hard to learn correctly")
-      (decision "Manifest-driven code generation: user describes services, otpiser generates the supervision tree")
-      (consequences "Users write zero Elixir code; all OTP complexity is handled by the -iser"))
+[architecture-decisions]
+decisions = [
+  # No ADRs recorded
+]
 
-    (adr "002-abi-ffi-standard"
-      (status "accepted")
-      (context "Need verified interop between Rust CLI, Elixir/BEAM runtime, and NIF bridge")
-      (decision "Idris2 ABI for formal proofs of tree correctness, Zig FFI for C-ABI NIF bridge")
-      (consequences "Compile-time guarantees that supervision trees are well-formed; zero runtime overhead"))
+[development-practices]
+versioning = "SemVer"
+documentation = "AsciiDoc"
+build-tool = "just"
 
-    (adr "003-strategy-selection"
-      (status "accepted")
-      (context "Choosing the right supervision strategy is the hardest part of OTP design")
-      (decision "Automatic strategy selection from service dependency analysis: independent → one_for_one, coupled → one_for_all, ordered → rest_for_one")
-      (consequences "Users describe relationships; otpiser computes optimal strategies"))
-
-    (adr "004-restart-intensity"
-      (status "accepted")
-      (context "Incorrect max_restarts/max_seconds causes restart storms or premature shutdown")
-      (decision "Compute restart intensity from SLA definitions: high-availability services get aggressive budgets, best-effort services get conservative ones")
-      (consequences "Self-tuning fault tolerance without manual parameter guessing"))
-
-    (adr "005-rsr-template"
-      (status "accepted")
-      (context "Need consistent project structure across 29+ -iser repos")
-      (decision "All repos cloned from rsr-template-repo with full CI/CD and governance")
-      (consequences "17 workflows, SECURITY.md, CONTRIBUTING, bot directives from day one")))
-
-  (development-practices
-    (language "Rust" (purpose "CLI orchestration and manifest parsing"))
-    (language "Idris2" (purpose "ABI formal proofs for supervision tree invariants"))
-    (language "Zig" (purpose "FFI C-ABI bridge for Erlang NIF generation"))
-    (language "Elixir" (purpose "Target language — generated code"))
-    (build-tool "cargo")
-    (ci "GitHub Actions (17 workflows)"))
-
-  (design-rationale
-    (principle "Manifest-driven"
-      (explanation "User intent captured in otpiser.toml; supervision tree generation is deterministic and reproducible"))
-    (principle "Formally verified bridges"
-      (explanation "Idris2 dependent types prove supervision tree well-formedness at compile time"))
-    (principle "Zero target language exposure"
-      (explanation "Users never write Elixir/Erlang — otpiser generates everything including Application, Supervisor, GenServer, tests, and mix.exs"))
-    (principle "Let it crash, correctly"
-      (explanation "OTP's 'let it crash' philosophy is correct but easy to misconfigure — otpiser ensures the crash recovery strategy matches service semantics"))))
+[maintenance-axes]
+scoping-first = true
+axis-1 = "must > intend > like"
+axis-2 = "corrective > adaptive > perfective"
+axis-3 = "systems > compliance > effects"

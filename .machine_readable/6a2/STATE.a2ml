@@ -1,42 +1,40 @@
-;; SPDX-License-Identifier: PMPL-1.0-or-later
-;; Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-;; STATE.a2ml — Current project state for otpiser
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# STATE.a2ml — Otpiser project state
+[metadata]
+project = "otpiser"
+version = "0.1.0"
+last-updated = "2026-03-21"
+status = "active"
+session = "converted from scheme — 2026-04-11"
 
-(state
-  (metadata
-    (version "0.1.0")
-    (last-updated "2026-03-21")
-    (author "Jonathan D.A. Jewell"))
+[project-context]
+name = "Otpiser"
+purpose = """Generate OTP supervision trees, GenServers, GenStateMachines, and fault-tolerance scaffolding from service descriptions"""
+completion-percentage = 45
 
-  (project-context
-    (name "otpiser")
-    (description "Generate OTP supervision trees, GenServers, GenStateMachines, and fault-tolerance scaffolding from service descriptions")
-    (status "alpha")
-    (priority "medium")
-    (ecosystem "-iser family (https://github.com/hyperpolymath/iseriser)"))
+[position]
+phase = "phase-1-complete"   # design | implementation | testing | maintenance | archived
+maturity = "experimental"  # experimental | alpha | beta | production | lts
 
-  (current-position
-    (phase "phase-1-complete")
-    (completion-percentage 45)
-    (milestone "Phase 1 complete — OTP manifest parser, strategy selection, Elixir codegen, diagram generator")
-    (what-changed
-      "2026-03-21: Phase 1 complete. OTP manifest parser, dependency graph, strategy selection, Elixir codegen (Application/Supervisor/GenServer), diagram generator. Integration tests passing."))
+[route-to-mvp]
+milestones = [
+  # No milestones recorded
+]
 
-  (route-to-mvp
-    (step 1 "DONE — OTP-specific manifest parser with service/supervisor/SLA sections")
-    (step 2 "DONE — Dependency graph builder and topology computation")
-    (step 3 "DONE — Strategy selection (one_for_one, one_for_all, rest_for_one)")
-    (step 4 "DONE — Elixir Application/Supervisor/GenServer codegen")
-    (step 5 "DONE — Supervision tree diagram generator")
-    (step 6 "TODO — DynamicSupervisor and Registry codegen")
-    (step 7 "TODO — GenStateMachine codegen with state transition diagrams")
-    (step 8 "TODO — Idris2 ABI proofs for tree correctness invariants")
-    (step 9 "TODO — PanLL panel and BoJ cartridge integration"))
+[blockers-and-issues]
+issues = [
+  "Elixir/Mix not installed on dev machine — generated code verified by structure",
+]
 
-  (blockers-and-issues
-    (note "Elixir/Mix not installed on dev machine — generated code verified by structure"))
+[critical-next-actions]
+actions = [
+  "Implement DynamicSupervisor and Registry codegen",
+  "Add GenStateMachine codegen with state transition diagrams",
+  "Write first working end-to-end example with mix test",
+]
 
-  (critical-next-actions
-    (action "Implement DynamicSupervisor and Registry codegen")
-    (action "Add GenStateMachine codegen with state transition diagrams")
-    (action "Write first working end-to-end example with mix test")))
+[maintenance-status]
+last-run-utc = "2026-03-21T00:00:00Z"
+last-result = "unknown"  # unknown | pass | warn | fail
