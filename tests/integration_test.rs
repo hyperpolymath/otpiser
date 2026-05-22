@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 //
 // Integration tests for otpiser.
@@ -1559,7 +1559,7 @@ restart = "permanent"
         let content = std::fs::read_to_string(output_dir.join(file))
             .unwrap_or_else(|_| panic!("Should read {}", file));
         assert!(
-            content.contains("SPDX-License-Identifier: PMPL-1.0-or-later"),
+            content.contains("SPDX-License-Identifier: MPL-2.0"),
             "File {} must have SPDX header",
             file
         );

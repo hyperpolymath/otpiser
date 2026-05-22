@@ -4,7 +4,7 @@
 // All types and layouts must match the Idris2 ABI definitions.
 // Provides supervision tree construction, validation, and Elixir code emission.
 //
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 
 const std = @import("std");
 

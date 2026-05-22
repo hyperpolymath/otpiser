@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // Template: QUICKSTART-USER.adoc — 5-minute path to working software
 // Replace otpiser, Otpiser — See README.adoc for details., just run, Otpiser started successfully. with actuals
 = otpiser — Quick Start for Users

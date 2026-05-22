@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Hyperpolymath Accessibility Standard (HAS)
 # Canonical accessibility requirements for all projects
 
@@ -314,5 +314,5 @@ HAS is structured as a contractile system with three compliance levels:
 
 ## License
 
-SPDX-License-Identifier: PMPL-1.0-or-later
+SPDX-License-Identifier: MPL-2.0
 Copyright (c) 2026 Hyperpolymath
