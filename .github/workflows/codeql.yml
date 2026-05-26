@@ -30,7 +30,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - language: javascript-typescript
+          # Repo source is Rust + Zig (neither natively supported by
+          # CodeQL extractors that we use). Scan workflow files via the
+          # `actions` extractor instead — every repo has those, and
+          # this avoids the "no source files" false-failure that the
+          # `javascript-typescript` default produced. See hypatia rule
+          # `codeql_language_matrix_mismatch`.
+          - language: actions
             build-mode: none
 
     steps:
