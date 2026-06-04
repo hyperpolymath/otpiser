@@ -171,7 +171,7 @@ project/
 │   └── contractiles/          # Policy enforcement contracts
 │       ├── k9/                # Security levels (Kennel/Yard/Hunt)
 │       ├── dust/Dustfile      # Recovery and rollback
-│       ├── lust/Intentfile    # Future intent declarations
+│       ├── intend/Intentfile    # Future intent declarations
 │       ├── must/Mustfile      # Invariant checks
 │       └── trust/Trustfile.hs # Cryptographic verification
 ├── docs/                      # Documentation

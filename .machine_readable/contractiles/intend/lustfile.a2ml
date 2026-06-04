@@ -10,6 +10,6 @@ lustfile {
     // Basic lustfile configuration
     enabled: true
     
-    // Repository-specific lust settings will be added here
+    // Repository-specific intend settings will be added here
     // This preserves the existing contractile structure and naming convention
 }

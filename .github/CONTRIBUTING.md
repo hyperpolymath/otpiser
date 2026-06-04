@@ -36,7 +36,7 @@ otpiser/
 ├── .machine_readable/   # ALL machine-readable content (Perimeter 1)
 │   ├── *.a2ml           # State files (STATE, META, ECOSYSTEM, etc.)
 │   ├── bot_directives/  # Bot configs
-│   └── contractiles/    # Policy contracts (k9, dust, lust, must, trust)
+│   └── contractiles/    # Policy contracts (k9, dust, intend, must, trust)
 ├── .well-known/         # Protocol files (Perimeter 1-3)
 ├── .github/             # GitHub config (Perimeter 1)
 │   ├── ISSUE_TEMPLATE/

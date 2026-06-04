@@ -42,7 +42,7 @@ The RSR template provides:
 - **AI manifest** (`0-AI-MANIFEST.a2ml`) as a universal entry point for all
   AI agents
 - **Bot directives** in `.machine_readable/bot_directives/` for bot orchestration integration
-- **Contractiles** in `.machine_readable/contractiles/` (k9, dust, lust, must, trust) for
+- **Contractiles** in `.machine_readable/contractiles/` (k9, dust, intend, must, trust) for
   policy enforcement
 - **Standardized workflows** (16+ GitHub Actions workflows, all SHA-pinned)
 - **Justfile automation** with standard recipes for common tasks

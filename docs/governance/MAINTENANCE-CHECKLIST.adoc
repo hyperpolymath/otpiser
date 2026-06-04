@@ -93,7 +93,7 @@ Run this pass at the end of a corrective/adaptive/perfective cycle:
 - [ ] Keep machine-readable canonical structure under `.machine_readable/`:
   - state/meta/ecosystem files (`*.a2ml` or repo standard)
   - `anchors/ANCHOR.a2ml`
-  - `contractiles/` (`must`, `trust`, `lust`, and related)
+  - `contractiles/` (`must`, `trust`, `intend`, and related)
   - `ai/` for AI guidance files
   - `bot_directives/` for bot control files
 - [ ] Keep contractiles/invariants present and wired:

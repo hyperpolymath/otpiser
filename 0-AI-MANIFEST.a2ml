@@ -50,7 +50,7 @@ Bot-specific instructions for your automated agents.
 
 ### Contractiles: `.machine_readable/contractiles/` ONLY
 
-Policy enforcement contracts (k9, dust, lust, must, trust).
+Policy enforcement contracts (k9, dust, intend, must, trust).
 
 ### AI Configuration & Guides: `.machine_readable/ai/` ONLY
 

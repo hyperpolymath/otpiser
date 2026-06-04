@@ -15,7 +15,7 @@ jobs:
           set -euo
           
           # Check all contractiles exist
-          for file in must trust dust lust adjust intend; do
+          for file in must trust dust intend adjust intend; do
             if [ ! -f ".machine_readable/contractiles/$file/${file}file.a2ml" ]; then
               echo "ERROR: Missing contractile: $file"
               exit 1

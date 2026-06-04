@@ -3,7 +3,7 @@
 # Replace this with your project's contractile.
 # See .machine_readable/contractiles/ for a working example.
 #
-# Copy this file to .machine_readable/contractiles/lust/Intentfile.a2ml
+# Copy this file to .machine_readable/contractiles/intend/Intentfile.a2ml
 # and fill in your project-specific checks.
 
 @abstract:
