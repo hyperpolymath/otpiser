@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 = Changelog
 :toc:
-// SPDX-License-Identifier: MPL-2.0
 
 All notable changes to otpiser will be documented in this file.
 

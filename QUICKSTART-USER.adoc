@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 // Template: QUICKSTART-USER.adoc — 5-minute path to working software
 // Replace otpiser, Otpiser — See README.adoc for details., just run, Otpiser started successfully. with actuals
 = otpiser — Quick Start for Users
