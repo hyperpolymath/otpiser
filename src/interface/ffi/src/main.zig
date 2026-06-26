@@ -73,15 +73,16 @@ const TreeNode = struct {
     module_name: []const u8,
     restart_type: ChildRestartType,
     shutdown_ms: u32,
-    // Tree structure
+    // Tree structure.
+    // `children` holds non-owning references to other nodes; every node is
+    // owned exactly once by the handle's flat `nodes` list (see OtpiserHandle).
     children: std.ArrayList(*TreeNode),
     allocator: std.mem.Allocator,
 
+    /// Release only this node's own resources. Children are NOT freed here:
+    /// they are owned by the handle's `nodes` list and freed there exactly
+    /// once, avoiding the double-free that arises from dual ownership.
     fn deinit(self: *TreeNode) void {
-        for (self.children.items) |child| {
-            child.deinit();
-            self.allocator.destroy(child);
-        }
         self.children.deinit();
     }
 };
