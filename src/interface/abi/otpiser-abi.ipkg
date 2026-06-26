@@ -1,0 +1,9 @@
+-- SPDX-License-Identifier: MPL-2.0
+package otpiser-abi
+
+sourcedir = "."
+
+modules = Otpiser.ABI.Types
+        , Otpiser.ABI.Layout
+        , Otpiser.ABI.Foreign
+        , Otpiser.ABI.Proofs

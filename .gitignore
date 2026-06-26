@@ -18,6 +18,11 @@ Thumbs.db
 /dist/
 /out/
 
+# Idris2 ABI build artefacts
+**/build/
+*.ttc
+*.ttm
+
 # Dependencies
 /node_modules/
 /vendor/

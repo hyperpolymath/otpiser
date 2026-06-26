@@ -18,6 +18,18 @@ import Otpiser.ABI.Layout
 %default total
 
 --------------------------------------------------------------------------------
+-- String Operations (shared FFI utilities)
+--------------------------------------------------------------------------------
+-- Declared first so its type is in scope for every use below. Without this,
+-- a forward reference lets the elaborator pick up the support `Ptr String`
+-- variant and the call sites fail to unify against our `Bits64` pointers.
+
+||| Convert C string to Idris String
+export
+%foreign "support:idris2_getString, libidris2_support"
+prim__getString : Bits64 -> String
+
+--------------------------------------------------------------------------------
 -- Library Lifecycle
 --------------------------------------------------------------------------------
 
@@ -236,11 +248,8 @@ prim__serializedSize : Bits64 -> Bits64 -> PrimIO Bits32
 --------------------------------------------------------------------------------
 -- String Operations (shared FFI utilities)
 --------------------------------------------------------------------------------
-
-||| Convert C string to Idris String
-export
-%foreign "support:idris2_getString, libidris2_support"
-prim__getString : Bits64 -> String
+-- (prim__getString is declared near the top of this module so its type is in
+-- scope for all callers above.)
 
 ||| Free C string allocated by otpiser
 export
