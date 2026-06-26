@@ -15,6 +15,7 @@ module Otpiser.ABI.Types
 import Data.Bits
 import Data.So
 import Data.Vect
+import Decidable.Equality
 
 %default total
 
@@ -30,10 +31,7 @@ data Platform = Linux | Windows | MacOS | BSD | WASM
 ||| This will be set during compilation based on target
 public export
 thisPlatform : Platform
-thisPlatform =
-  %runElab do
-    -- Platform detection logic
-    pure Linux  -- Default, override with compiler flags
+thisPlatform = Linux  -- Default platform; override with compiler flags
 
 --------------------------------------------------------------------------------
 -- OTP Supervision Strategy Types
@@ -60,7 +58,12 @@ DecEq SupervisorStrategy where
   decEq OneForOne OneForOne = Yes Refl
   decEq OneForAll OneForAll = Yes Refl
   decEq RestForOne RestForOne = Yes Refl
-  decEq _ _ = No absurd
+  decEq OneForOne OneForAll = No (\case Refl impossible)
+  decEq OneForOne RestForOne = No (\case Refl impossible)
+  decEq OneForAll OneForOne = No (\case Refl impossible)
+  decEq OneForAll RestForOne = No (\case Refl impossible)
+  decEq RestForOne OneForOne = No (\case Refl impossible)
+  decEq RestForOne OneForAll = No (\case Refl impossible)
 
 ||| Convert SupervisorStrategy to C-compatible integer for FFI
 public export
@@ -179,6 +182,13 @@ data ValidCallback : GenServerCallback -> Type where
 ||| A child specification defines how a supervisor starts, monitors,
 ||| and restarts a child process.
 ||| @see https://www.erlang.org/doc/man/supervisor#type-child_spec
+
+||| Whether a child is a worker process or a supervisor.
+public export
+data ChildType : Type where
+  Worker     : ChildType
+  Supervisor : ChildType
+
 public export
 record ChildSpec where
   constructor MkChildSpec
@@ -188,12 +198,6 @@ record ChildSpec where
   restartType : ChildRestartType
   shutdown    : ShutdownType
   childType   : ChildType
-
-||| Whether a child is a worker process or a supervisor.
-public export
-data ChildType : Type where
-  Worker     : ChildType
-  Supervisor : ChildType
 
 ||| Proof that a child spec has a non-empty ID
 public export
@@ -220,29 +224,47 @@ data ProcessTree : Type where
     (spec : ChildSpec) ->
     ProcessTree
 
-||| Count total nodes in a process tree
+||| Count total nodes in a process tree.
+||| Uses an explicit structural fold over the child vector so the totality
+||| checker can see the recursion descend into proper subterms.
 public export
 treeSize : ProcessTree -> Nat
 treeSize (WorkerNode _) = 1
-treeSize (SupervisorNode _ _ _ children) = 1 + sum (map treeSize children)
+treeSize (SupervisorNode _ _ _ children) = 1 + sumChildSizes children
+  where
+    sumChildSizes : Vect k ProcessTree -> Nat
+    sumChildSizes [] = 0
+    sumChildSizes (c :: cs) = treeSize c + sumChildSizes cs
 
 ||| Count worker nodes only
 public export
 workerCount : ProcessTree -> Nat
 workerCount (WorkerNode _) = 1
-workerCount (SupervisorNode _ _ _ children) = sum (map workerCount children)
+workerCount (SupervisorNode _ _ _ children) = sumChildWorkers children
+  where
+    sumChildWorkers : Vect k ProcessTree -> Nat
+    sumChildWorkers [] = 0
+    sumChildWorkers (c :: cs) = workerCount c + sumChildWorkers cs
 
 ||| Depth of the supervision tree
 public export
 treeDepth : ProcessTree -> Nat
 treeDepth (WorkerNode _) = 0
-treeDepth (SupervisorNode _ _ _ children) = 1 + foldr max 0 (map treeDepth children)
+treeDepth (SupervisorNode _ _ _ children) = 1 + maxChildDepth children
+  where
+    maxChildDepth : Vect k ProcessTree -> Nat
+    maxChildDepth [] = 0
+    maxChildDepth (c :: cs) = max (treeDepth c) (maxChildDepth cs)
 
 ||| Proof that a tree has at least one worker
 public export
 data HasWorkers : ProcessTree -> Type where
-  IsWorker : HasWorkers (WorkerNode _)
-  HasChildWorker : HasWorkers child -> HasWorkers (SupervisorNode _ _ _ (child :: _))
+  IsWorker : HasWorkers (WorkerNode spec)
+  HasChildWorker :
+    {0 n : Nat} ->
+    {0 rest : Vect n ProcessTree} ->
+    HasWorkers child ->
+    HasWorkers (SupervisorNode name strategy intensity (child :: rest))
 
 --------------------------------------------------------------------------------
 -- FFI Result Codes
@@ -288,7 +310,48 @@ DecEq Result where
   decEq NullPointer NullPointer = Yes Refl
   decEq InvalidStrategy InvalidStrategy = Yes Refl
   decEq MalformedTree MalformedTree = Yes Refl
-  decEq _ _ = No absurd
+  decEq Ok Error = No (\case Refl impossible)
+  decEq Ok InvalidParam = No (\case Refl impossible)
+  decEq Ok OutOfMemory = No (\case Refl impossible)
+  decEq Ok NullPointer = No (\case Refl impossible)
+  decEq Ok InvalidStrategy = No (\case Refl impossible)
+  decEq Ok MalformedTree = No (\case Refl impossible)
+  decEq Error Ok = No (\case Refl impossible)
+  decEq Error InvalidParam = No (\case Refl impossible)
+  decEq Error OutOfMemory = No (\case Refl impossible)
+  decEq Error NullPointer = No (\case Refl impossible)
+  decEq Error InvalidStrategy = No (\case Refl impossible)
+  decEq Error MalformedTree = No (\case Refl impossible)
+  decEq InvalidParam Ok = No (\case Refl impossible)
+  decEq InvalidParam Error = No (\case Refl impossible)
+  decEq InvalidParam OutOfMemory = No (\case Refl impossible)
+  decEq InvalidParam NullPointer = No (\case Refl impossible)
+  decEq InvalidParam InvalidStrategy = No (\case Refl impossible)
+  decEq InvalidParam MalformedTree = No (\case Refl impossible)
+  decEq OutOfMemory Ok = No (\case Refl impossible)
+  decEq OutOfMemory Error = No (\case Refl impossible)
+  decEq OutOfMemory InvalidParam = No (\case Refl impossible)
+  decEq OutOfMemory NullPointer = No (\case Refl impossible)
+  decEq OutOfMemory InvalidStrategy = No (\case Refl impossible)
+  decEq OutOfMemory MalformedTree = No (\case Refl impossible)
+  decEq NullPointer Ok = No (\case Refl impossible)
+  decEq NullPointer Error = No (\case Refl impossible)
+  decEq NullPointer InvalidParam = No (\case Refl impossible)
+  decEq NullPointer OutOfMemory = No (\case Refl impossible)
+  decEq NullPointer InvalidStrategy = No (\case Refl impossible)
+  decEq NullPointer MalformedTree = No (\case Refl impossible)
+  decEq InvalidStrategy Ok = No (\case Refl impossible)
+  decEq InvalidStrategy Error = No (\case Refl impossible)
+  decEq InvalidStrategy InvalidParam = No (\case Refl impossible)
+  decEq InvalidStrategy OutOfMemory = No (\case Refl impossible)
+  decEq InvalidStrategy NullPointer = No (\case Refl impossible)
+  decEq InvalidStrategy MalformedTree = No (\case Refl impossible)
+  decEq MalformedTree Ok = No (\case Refl impossible)
+  decEq MalformedTree Error = No (\case Refl impossible)
+  decEq MalformedTree InvalidParam = No (\case Refl impossible)
+  decEq MalformedTree OutOfMemory = No (\case Refl impossible)
+  decEq MalformedTree NullPointer = No (\case Refl impossible)
+  decEq MalformedTree InvalidStrategy = No (\case Refl impossible)
 
 --------------------------------------------------------------------------------
 -- Opaque Handles
@@ -304,8 +367,10 @@ data Handle : Type where
 ||| Returns Nothing if pointer is null
 public export
 createHandle : Bits64 -> Maybe Handle
-createHandle 0 = Nothing
-createHandle ptr = Just (MkHandle ptr)
+createHandle ptr =
+  case choose (ptr /= 0) of
+    Left ok => Just (MkHandle ptr {nonNull = ok})
+    Right _ => Nothing
 
 ||| Extract pointer value from handle
 public export
@@ -343,10 +408,15 @@ ptrSize MacOS = 64
 ptrSize BSD = 64
 ptrSize WASM = 32
 
-||| Pointer type for platform
+||| Pointer type for platform: a pointer-width unsigned integer.
+||| 64-bit on native platforms, 32-bit on WASM.
 public export
 CPtr : Platform -> Type -> Type
-CPtr p _ = Bits (ptrSize p)
+CPtr Linux   _ = Bits64
+CPtr Windows _ = Bits64
+CPtr MacOS   _ = Bits64
+CPtr BSD     _ = Bits64
+CPtr WASM    _ = Bits32
 
 --------------------------------------------------------------------------------
 -- Memory Layout Proofs
