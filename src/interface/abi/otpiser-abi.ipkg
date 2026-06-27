@@ -7,3 +7,4 @@ modules = Otpiser.ABI.Types
         , Otpiser.ABI.Layout
         , Otpiser.ABI.Foreign
         , Otpiser.ABI.Proofs
+        , Otpiser.ABI.Semantics
