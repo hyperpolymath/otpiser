@@ -9,3 +9,4 @@ modules = Otpiser.ABI.Types
         , Otpiser.ABI.Proofs
         , Otpiser.ABI.Semantics
         , Otpiser.ABI.Invariants
+        , Otpiser.ABI.FfiSeam
