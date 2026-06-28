@@ -10,3 +10,4 @@ modules = Otpiser.ABI.Types
         , Otpiser.ABI.Semantics
         , Otpiser.ABI.Invariants
         , Otpiser.ABI.FfiSeam
+        , Otpiser.ABI.Capstone
