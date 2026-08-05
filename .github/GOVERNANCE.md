@@ -2,13 +2,13 @@
 
 # Project Governance
 
-This document describes the governance model for **{{PROJECT_NAME}}**.
+This document describes the governance model for **Otpiser**.
 
 ---
 
 ## Project Governance Model
 
-{{PROJECT_NAME}} follows a **Benevolent Dictator For Life (BDFL)** governance model.
+Otpiser follows a **Benevolent Dictator For Life (BDFL)** governance model.
 This model is well-suited for solo maintainers and small project teams where rapid,
 consistent decision-making is more valuable than formal consensus processes.
 
