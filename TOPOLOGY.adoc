@@ -1,14 +1,18 @@
-<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
-<!-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk> -->
-# TOPOLOGY.md — otpiser
+== TOPOLOGY.md — otpiser
 
-## Purpose
+=== Purpose
 
-otpiser generates fault-tolerant OTP supervision trees for Erlang/Elixir systems. It reads a service topology description from an `otpiser.toml` manifest and emits Erlang/Elixir modules with correctly structured supervisor trees, child specifications, restart strategies, and Zig FFI bridges for native integration. otpiser targets engineers who want the reliability guarantees of the OTP supervision model without hand-authoring the boilerplate of nested supervisors and child specs.
+otpiser generates fault-tolerant OTP supervision trees for Erlang/Elixir
+systems. It reads a service topology description from an
+`+otpiser.toml+` manifest and emits Erlang/Elixir modules with correctly
+structured supervisor trees, child specifications, restart strategies,
+and Zig FFI bridges for native integration. otpiser targets engineers
+who want the reliability guarantees of the OTP supervision model without
+hand-authoring the boilerplate of nested supervisors and child specs.
 
-## Module Map
+=== Module Map
 
-```
+....
 otpiser/
 ├── src/
 │   ├── main.rs                    # CLI entry point (clap): init, validate, generate, build, run, info
@@ -20,11 +24,11 @@ otpiser/
 ├── verification/                  # Proof harnesses
 ├── container/                     # Stapeln container ecosystem
 └── .machine_readable/             # A2ML metadata
-```
+....
 
-## Data Flow
+=== Data Flow
 
-```
+....
 otpiser.toml manifest
         │
    ┌────▼────┐
@@ -43,4 +47,4 @@ otpiser.toml manifest
    ┌────▼────┐
    │  OTP VM  │  run fault-tolerant supervision hierarchy on BEAM
    └─────────┘
-```
+....

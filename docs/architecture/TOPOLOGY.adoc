@@ -1,10 +1,8 @@
-<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
-<!-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk> -->
-# otpiser — TOPOLOGY
+== otpiser — TOPOLOGY
 
-## Module Map
+=== Module Map
 
-```
+....
 otpiser/
 ├── src/
 │   ├── main.rs                     # CLI entry point (clap subcommands)
@@ -48,11 +46,11 @@ otpiser/
 │   ├── attribution/                # Citations, maintainers
 │   └── legal/                      # License exhibits
 └── .machine_readable/              # All machine-readable metadata (6a2, policies, etc.)
-```
+....
 
-## Data Flow
+=== Data Flow
 
-```
+....
 otpiser.toml (user manifest)
     │
     ▼
@@ -87,13 +85,13 @@ otpiser.toml (user manifest)
        ├──► config/config.exs             (Application config)
        ├──► mix.exs                       (Project definition)
        └──► test/**/*_test.exs            (ExUnit test scaffolding)
-```
+....
 
-## Supervision Tree Model
+=== Supervision Tree Model
 
 OTPiser generates trees following this hierarchy:
 
-```
+....
 Application
 └── RootSupervisor (strategy from manifest)
     ├── ServiceGroupSupervisor_A (one_for_all — tightly coupled)
@@ -108,21 +106,35 @@ Application
     │   └── (workers spawned on demand)
     ├── Task.Supervisor: AsyncJobs
     └── GenServer: HealthMonitor
-```
+....
 
-## Key Interfaces
+=== Key Interfaces
 
-| Interface | Location | Purpose |
-|-----------|----------|---------|
-| CLI → Manifest | `main.rs` → `manifest/mod.rs` | Parse `otpiser.toml` |
-| Manifest → Codegen | `manifest::Manifest` struct | Validated service description |
-| Codegen → Elixir | `codegen/mod.rs` → templates | Generate `.ex` files |
-| Idris2 ABI → Zig FFI | `Types.idr` → `main.zig` | Verified type bridge |
-| Zig FFI → BEAM NIF | `main.zig` → Erlang NIF API | Performance-critical paths |
+[width="100%",cols="37%,33%,30%",options="header",]
+|===
+|Interface |Location |Purpose
+|CLI → Manifest |`+main.rs+` → `+manifest/mod.rs+` |Parse
+`+otpiser.toml+`
 
-## Cross-iser Integration Points
+|Manifest → Codegen |`+manifest::Manifest+` struct |Validated service
+description
 
-- **iseriser**: Can scaffold new otpiser-style projects
-- **chapeliser**: Distributed computing — otpiser supervises Chapel workers
-- **verisimiser**: Database layer — otpiser supervises VeriSimDB connections
-- **Burble**: Voice platform — otpiser generates supervision trees for call handling
+|Codegen → Elixir |`+codegen/mod.rs+` → templates |Generate `+.ex+`
+files
+
+|Idris2 ABI → Zig FFI |`+Types.idr+` → `+main.zig+` |Verified type
+bridge
+
+|Zig FFI → BEAM NIF |`+main.zig+` → Erlang NIF API |Performance-critical
+paths
+|===
+
+=== Cross-iser Integration Points
+
+* *iseriser*: Can scaffold new otpiser-style projects
+* *chapeliser*: Distributed computing — otpiser supervises Chapel
+workers
+* *verisimiser*: Database layer — otpiser supervises VeriSimDB
+connections
+* *Burble*: Voice platform — otpiser generates supervision trees for
+call handling
